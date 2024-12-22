@@ -67,9 +67,17 @@ const Canvas = () => {
                     e.target.setSelectionRange(start + TAB_SPACES, start + TAB_SPACES);
                 }, 0);
             }
-            
             handleStatus(e);
-        }
+        }        
+    };
+
+    const getLineNumbers = () => {
+            const lines = text.split('\n');
+            return lines.length > 0 ? lines.map((_, index) => (
+                <div key={index} className="font-mono">
+                    {index + 1}
+                </div>
+            )) : [<div key="1" className="font-mono">1</div>];
     };
 
     return (
@@ -77,6 +85,7 @@ const Canvas = () => {
             {/* Editor Area */}
             <div className="flex">
                 <div className="p-4 text-right bg-gray-800 text-gray-500 select-none min-w-[4rem] font-mono">
+                        {getLineNumbers()}
                 </div>
                 {/* Text Area Container */}
                 <div className="w-full relative">

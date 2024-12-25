@@ -1,6 +1,7 @@
 "use client"
 import { Button } from "@/components/ui/button"
 import { ThemeProvider } from "./components/theme-provider"
+import Canvas from "@/components/Canvas"
 import {
   Card,
   CardContent,
@@ -19,11 +20,31 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable"
+
 
 function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <Card className="w-[350px]">
+
+<ResizablePanelGroup
+      direction="horizontal"
+      className="min-h-[200px] rounded-lg border md:min-w-[450px]"
+    >
+      <ResizablePanel defaultSize={25}>
+        <div className="flex h-full items-center justify-center">
+          <Canvas></Canvas>
+        </div>
+      </ResizablePanel>
+      <ResizableHandle withHandle />
+      <ResizablePanel defaultSize={75}>
+        <div className="flex h-full items-center justify-center p-6">
+        <Card className="w-[350px]">
+        
         <CardHeader>
           <CardTitle>Create project</CardTitle>
           <CardDescription>Deploy your new project in one-click.</CardDescription>
@@ -57,6 +78,10 @@ function App() {
           <Button>Deploy</Button>
         </CardFooter>
       </Card>
+        </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
+      
     </ThemeProvider>
   );
 }

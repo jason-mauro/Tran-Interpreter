@@ -1,16 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import AceEditor from 'react-ace';
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 
 // Import required modes and themes
-import 'ace-builds/src-noconflict/mode-javascript';
-import 'ace-builds/src-noconflict/theme-monokai';
+import 'ace-builds/src-noconflict/mode-java';
+import 'ace-builds/src-noconflict/theme-github';
+import 'ace-builds/src-noconflict/theme-github_dark';
+import 'ace-builds/src-noconflict/theme-gruvbox_dark_hard';
+import 'ace-builds/src-noconflict/theme-kr_theme';
+import 'ace-builds/src-noconflict/theme-github_light_default';
+
+
 
 const MultiTabEditor = () => {
   const [tabs, setTabs] = useState([
-    { id: 1, name: 'Tab 1', content: 'console.log("Hello, Tab 1!");' },
-    { id: 2, name: 'Tab 2', content: 'console.log("Hello, Tab 2!");' },
+    { id: 1, name: 'main.tran', content: 'console.log("Hello, Tab 1!");' },
+    { id: 2, name: 'Untitled(1)', content: 'console.log("Hello, Tab 2!");' },
   ]);
   const [activeTab, setActiveTab] = useState(1);
   const newTabRef = useRef<HTMLInputElement | null>(null);
@@ -34,7 +39,7 @@ const MultiTabEditor = () => {
 
   const addTab = () => {
     const newTabId = Math.max(...tabs.map(tab => tab.id)) + 1;
-    const defaultName = `Tab ${newTabId}`;
+    const defaultName = `Untiltled(${newTabId})`;
     
     setTabs([...tabs, { id: newTabId, name: defaultName, content: '' }]);
     setActiveTab(newTabId);
@@ -87,14 +92,14 @@ const MultiTabEditor = () => {
 
 
   return (
-    <div className="w-full h-full">
-      <div className="flex items-center mb-0 overflow-x-auto whitespace-nowrap scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-700">
+    <div className="w-2/3 h-full">
+      <div className="flex items-center rounded-t-[0.3rem] bg-secondary m-0 p-0 overflow-x-auto whitespace-nowrap scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-700">
         {tabs.map((tab) => (
           <div
             key={tab.id}
             className={`flex items-center ${
-              activeTab === tab.id ? 'dark:bg-primary text-background' : 'dark:bg-muted '
-            }  flex justify-center border-t border-l border-r border-background w-[160px] h-[42px] cursor-pointer rounded-t-[0.3rem]`}
+              activeTab === tab.id ? 'bg-primary rounded-t-[0.3rem]' : 'bg-secondary '
+            }  flex justify-center border-background w-[160px] h-[35px] cursor-pointer`}
             onClick={() => handleTabClick(tab.id)}
           >
             <input
@@ -112,7 +117,7 @@ const MultiTabEditor = () => {
                   newTabRef.current = el;
                 }
               }}
-              className={`bg-transparent border-none font-bold w-[140px] text-center ${
+              className={`bg-transparent border-none font-bold w-[120px] text-center ${
                 editingTabId === tab.id ? 'cursor-text' : 'cursor-pointer'
               }`}
             />
@@ -129,7 +134,7 @@ const MultiTabEditor = () => {
         ))}
         <button
           onClick={addTab}
-          className="px-2.5 py-2.5 bg-red-500 text-white border-none rounded cursor-pointer"
+          className="h-[35px] w-[35px] ml-[2px]  bg-primary text-white border-background rounded-[0.3rem] cursor-pointer"
         >
           +
         </button>
@@ -140,16 +145,19 @@ const MultiTabEditor = () => {
           tab.id === activeTab && (
             <div key={tab.id} className="w-full h-full" >
               <AceEditor
-                mode="javascript"
-                theme="monokai"
+                mode="java"
+                theme="github_light_default"
                 name={`EDITOR_${tab.id}`}
                 width="100%"
                 height="100%"
                 value={tab.content}
                 onChange={handleEditorChange}
                 setOptions={{ 
-                    fontSize: 14,
-                    printMargin: false }}
+                    fontSize: 18,
+                    printMargin: false,
+                    fontFamily: 'Monaspace'
+                 }}
+                style={{paddingTop: '100px'}}
               />
             </div>
           )

@@ -5,6 +5,10 @@ module.exports = {
   darkMode: ["class"],
   content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
   theme: {
+	fontFamily: {
+		'mona': ['Monaspace'],
+		'sans': ['Helvetica', 'Arial', 'sans-serif'],
+	},
   	container: {
   		center: true,
   		padding: '2rem',

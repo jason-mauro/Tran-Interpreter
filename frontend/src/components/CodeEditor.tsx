@@ -3,16 +3,20 @@ import { useEffect } from 'react';
 
 
 
+
+
+
 interface EditorProps {
     code: string;
     setCode: React.Dispatch<React.SetStateAction<string>>;
     theme: string;
+    keybinds: string;
 }
 
 
 
 
-const CodeEditor: React.FC<EditorProps> = ({code, setCode, theme }) => {
+const CodeEditor: React.FC<EditorProps> = ({code, setCode, theme, keybinds }) => {
 
   useEffect(() => {
     const loadTheme = async () => {
@@ -41,11 +45,11 @@ const CodeEditor: React.FC<EditorProps> = ({code, setCode, theme }) => {
 
     loadTheme();
   }, [theme]);
-
+    
     
     return (
         <Editor
-            height={"800px"}
+            height={"650px"}
             width={"100%"}
             language="python"
             value={code}

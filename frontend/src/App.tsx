@@ -9,7 +9,7 @@ import KeybindPicker from './components/KeybindPicker'
 
 function App() {
 
-  const [code, setCode] = useState("hello world");
+  const [code, setCode] = useState("class demo\n\tshared start()\n\t\tconsole.write(\"Hello World\")");
   const [theme, setTheme] = useState("Github Light");
   const [keybinds, setKeybinds] = useState("Default");
 
@@ -35,6 +35,7 @@ function App() {
               theme={theme}
               code={code}
               setCode={setCode}
+              keybinds={keybinds}
             />
             <div className="flex flex-row">
               <ThemePicker onThemeChange={handleThemeChange} />

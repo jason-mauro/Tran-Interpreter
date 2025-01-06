@@ -6,12 +6,22 @@ import { useState } from 'react';
 import ThemePicker from './components/ThemePicker'
 import KeybindPicker from './components/KeybindPicker'
 
+interface File {
+  name: string;
+  value: string;
+}
 
 function App() {
+  const [theme, setTheme] = useState<string>("Github Light");
+  const [keybinds, setKeybinds] = useState<string>("Default");
+  const [files, setFiles] = useState<Record<string, File>>({
+    "demo.tran": {name: "demo.tran", value: `class demo\tshared start()\t\tconsole.write(\"Hello World\")`,}
+  })
 
-  const [code, setCode] = useState("class demo\n\tshared start()\n\t\tconsole.write(\"Hello World\")");
-  const [theme, setTheme] = useState("Github Light");
-  const [keybinds, setKeybinds] = useState("Default");
+  const [fileName, setFileName] = useState<string>("demo.tran");
+
+  const file = files[fileName];
+
 
   const handleKeybindChange = (keybinds : string ) => {
     setKeybinds(keybinds);
@@ -33,9 +43,10 @@ function App() {
           <div className="flex flex-col w-[60%] bg-secondary p-4 rounded-lg shadow-lg">
             <CodeEditor
               theme={theme}
-              code={code}
-              setCode={setCode}
+              value={file.value}
+              path={file.name}
               keybinds={keybinds}
+              
             />
             <div className="flex flex-row">
               <ThemePicker onThemeChange={handleThemeChange} />

@@ -273,7 +273,7 @@ const ThemePicker: React.FC<ThemePickerProps> = ({ onThemeChange }) => {
             <Command>
             <CommandInput placeholder="Search Themes..." />
             <CommandList>
-                <CommandEmpty>No framework found.</CommandEmpty>
+                <CommandEmpty>No theme found.</CommandEmpty>
                 <CommandGroup>
                 {themes.map((theme) => (
                     <CommandItem

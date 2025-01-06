@@ -67,7 +67,6 @@ const KeybindPicker: React.FC<ThemePickerProps> = ({ onKeybindChange }) => {
         </PopoverTrigger>
         <PopoverContent className="w-[200px] p-0">
             <Command>
-            <CommandInput placeholder="Search Themes..." />
             <CommandList>
                 <CommandEmpty>No framework found.</CommandEmpty>
                 <CommandGroup>

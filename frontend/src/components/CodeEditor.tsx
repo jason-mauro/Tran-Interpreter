@@ -1,23 +1,16 @@
-import Editor, { loader, Monaco } from '@monaco-editor/react';
-import { useEffect } from 'react';
-import { fileURLToPath } from 'url';
-
-
-
-
-
+import Editor, { loader } from '@monaco-editor/react';
+import React, { useEffect } from 'react';
+import * as monacoEditor from 'monaco-editor';
 
 interface EditorProps {
     path: string;
     value: string
     theme: string;
     keybinds: string;
+    editorRef: React.MutableRefObject<monacoEditor.editor.IStandaloneCodeEditor | null>
 }
 
-
-
-
-const CodeEditor: React.FC<EditorProps> = ({path, value, theme, keybinds }) => {
+const CodeEditor: React.FC<EditorProps> = ({path, value, theme, keybinds, editorRef }) => {
 
   useEffect(() => {
     const loadTheme = async () => {
@@ -56,6 +49,7 @@ const CodeEditor: React.FC<EditorProps> = ({path, value, theme, keybinds }) => {
             theme={theme}
             path={path}
             defaultValue={value}
+            onMount={(editor) => editorRef.current = editor}
         />
     );
 };

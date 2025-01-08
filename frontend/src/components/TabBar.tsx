@@ -2,35 +2,23 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { X, Plus } from 'lucide-react'
-
-
-interface File {
-    name: string;
-    value: string;
-  }
-
-interface Tab {
-  id: number
-  title: string
-  active: boolean
-}
+import { File } from '../types/types'
 
 interface TabProps {
+    files: Record<string, File>
     setFiles: React.Dispatch<React.SetStateAction<Record<string, File>>>
     setFileName: React.Dispatch<React.SetStateAction<string>>
 }
 
-const TabBar: React.FC<TabProps> = ({setFiles, setFileName}) => {
-  const [tabs, setTabs] = useState<Tab[]>([
-    { id: 1, title: 'demo.tran', active: true },
-    { id: 2, title: 'demo2.tran', active: false },
-  ])
-  const [nextId, setNextId] = useState(3)
+const TabBar: React.FC<TabProps> = ({ files, setFiles, setFileName}) => {
+  const [activeTab, setActiveTab] = useState<string>("demo.tran");
+  const [nextId, setNextId] = useState(1)
+  const [tabs, setTabs] = useState<string[]>(Object.keys(files));
   const [showScrollbar, setShowScrollbar] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const scrollbarRef = useRef<HTMLDivElement>(null)
-  const [editingTabID, setEditingTabID] = useState<number | null>(null)
+  const [editingTabName, setEditingTabName] = useState<string | null>(null)
 
 
   useEffect(() => {
@@ -47,7 +35,7 @@ const TabBar: React.FC<TabProps> = ({setFiles, setFileName}) => {
     return () => {
       window.removeEventListener('resize', checkForOverflow)
     }
-  }, [tabs])
+  }, [files])
 
   const handleScroll = () => {
     if (scrollContainerRef.current && scrollbarRef.current) {
@@ -72,39 +60,7 @@ const TabBar: React.FC<TabProps> = ({setFiles, setFileName}) => {
     }
   }
 
-  const addTab = () => {
-    const newTab = {
-      id: nextId,
-      title: `untitled-${nextId}.tran`,
-      active: false,
-    }
-    setTabs([...tabs.map((tab) => ({ ...tab, active: false })), { ...newTab, active: true }])
-    setEditingTabID(newTab.id)
-    setNextId(nextId + 1)
-  }
 
-  const removeTab = (tabId: number, event: React.MouseEvent) => {
-    event.stopPropagation()
-    const tabIndex = tabs.findIndex((tab) => tab.id === tabId)
-    const newTabs = tabs.filter((tab) => tab.id !== tabId)
-
-    if (tabs[tabIndex].active && newTabs.length > 0) {
-      const newActiveIndex = Math.min(tabIndex, newTabs.length - 1)
-      newTabs[newActiveIndex].active = true
-    }
-
-    setTabs(newTabs)
-  }
-
-  const activateTab = (tabId: number) => {
-    setTabs(
-      tabs.map((tab) => ({
-        ...tab,
-        active: tab.id === tabId,
-      }))
-    )
-    setFileName(tabs.find((tab) => tab.id === tabId)?.title || "")
-  }
 
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -132,14 +88,32 @@ const TabBar: React.FC<TabProps> = ({setFiles, setFileName}) => {
     };
   }, []);
 
-  const handleTabRename = (tabId: number, newTitle: string) => {
-  newTitle ? setTabs(
-    tabs.map((tab) =>
-      tab.id === tabId ? { ...tab, title: newTitle } : tab
-    )
-  ) : setEditingTabID(null);
-  setEditingTabID(null);
-}
+  // activateTab
+  const activateTab = (tab: string) => {
+    setFiles(current => ({
+      ...current,
+      [activeTab]: {
+        ...current[activeTab],
+        active: false
+      }
+      ,
+      [tab]: {
+        ...current[tab],
+        active: true
+      }
+    }));
+    setActiveTab(tab);
+    setFileName(tab);
+  };
+
+  
+  // handleTabRename
+
+  // setEditingTabID
+
+  // removeTab
+
+  
 
 
   return (
@@ -160,25 +134,25 @@ const TabBar: React.FC<TabProps> = ({setFiles, setFileName}) => {
       >
         {tabs.map((tab) => (
           <div
-            key={tab.id}
-            onClick={() => activateTab(tab.id)}
+            key={files[tab].id}
+            onClick={() => activateTab(tab)}
             className={`
               flex items-center justify-between min-w-[120px] max-w-[200px] h-8 px-3
               cursor-pointer select-none
               border-t border-r border-l
               ${
-                tab.active
+                files[tab].active
                   ? 'bg-card border-ring rounded-lg border'
                   : 'bg-card rounded-lg border border-input'
               }
             `}
           >
-            {tab.active && tab.id === editingTabID ? (
+            {files[tab].active && tab === editingTabName ? (
                 <input 
                 className="flex-1 text-sm text-card-foreground truncate w-[80%]" 
-                defaultValue={tab.title}
+                defaultValue={files[tab].name}
                 onBlur={(e) => {
-                    handleTabRename(tab.id, e.target.value);
+                    //handleTabRename(file.name, e.target.value);
                 }}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -190,14 +164,14 @@ const TabBar: React.FC<TabProps> = ({setFiles, setFileName}) => {
             ) : (
                 <span 
                     className="text-sm text-card-foreground truncate"
-                    onDoubleClick={() => setEditingTabID(tab.id)}
+                    onDoubleClick={() => setEditingTabName(tab)}
                 >
-                    {tab.title}
+                    {tab}
                 </span>
             )}
             
             <button
-              onClick={(e) => removeTab(tab.id, e)}
+              //onClick={(e) => removeTab(tab, e)}
               className="ml-2 p-0.5 rounded-sm hover:bg-accent text-card-foreground hover:text-accent-foreground"
             >
               <X size={14} />
@@ -228,7 +202,7 @@ const TabBar: React.FC<TabProps> = ({setFiles, setFileName}) => {
         </div>
       )}
       <button
-        onClick={addTab}
+        //onClick={addTab}
         className="flex items-center justify-center w-8 h-8 hover:bg-muted-foreground text-primary hover:text-primary"
       >
         <Plus size={16} />

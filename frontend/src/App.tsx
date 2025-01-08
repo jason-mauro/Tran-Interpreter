@@ -1,24 +1,20 @@
 "use client";
 
-import CodeEditor from './components/CodeEditor';
+import TabbedEditor from './components/TabbedEditor';
 import { ThemeProvider } from './components/theme-provider';
 import { useEffect, useState, useRef } from 'react';
-import ThemePicker from './components/ThemePicker'
-import KeybindPicker from './components/KeybindPicker'
-import * as monacoEditor from 'monaco-editor';
-import TabBar from './components/TabBar';
 
-interface File {
-  name: string;
-  content: string;
-}
+import * as monacoEditor from 'monaco-editor';
+import { File } from './types/types';
+
 
 function App() {
   const [theme, setTheme] = useState<string>("Github Light");
   const [keybinds, setKeybinds] = useState<string>("Default");
   const editorRef = useRef<monacoEditor.editor.IStandaloneCodeEditor | null>(null);
   const [files, setFiles] = useState<Record<string, File>>({
-    "demo.tran": {name: "demo.tran", content: `class demo\n\tshared start()\n\t\tconsole.write(\"Hello World\")`},
+    "demo.tran": {id: 0, name: "demo.tran", content: `class demo\n\tshared start()\n\t\tconsole.write(\"Hello World\")`, active: true, viewState: null},
+    "demo2.tran": {id: 1, name: "demo2.tran", content: `class demo2\n\tshared start()\n\t\tconsole.write(\"Hello World\")`, active: false, viewState: null}
   })
 
   const [fileName, setFileName] = useState<string>("demo.tran");
@@ -44,23 +40,17 @@ function App() {
           <h1 className="text-primary-foreground text-2xl font-sans">Tran Interpreter</h1>
         </div>
          <div className="flex justify-center items-center bg-background">
-          <div className="flex flex-col w-[60%] bg-accent p-4 rounded-lg border border-input shadow-sm">
-            <TabBar 
-              setFiles={setFiles}
-              setFileName={setFileName}/>
-            <CodeEditor
-              theme={theme}
-              value={file.content}
-              path={file.name}
-              keybinds={keybinds}
-              editorRef={editorRef}
+          <TabbedEditor
+            handleKeybindChange={handleKeybindChange} 
+            editorRef={editorRef}
+            handleThemeChange={handleThemeChange}
+            theme={theme}
+            keybinds={keybinds}
+            setFileName={setFileName}
+            setFiles={setFiles}
+            files={files}
+            fileName={fileName}
             />
-            <div className="flex flex-row py-1">
-              <ThemePicker onThemeChange={handleThemeChange} />
-              <KeybindPicker onKeybindChange={handleKeybindChange} />
-            </div>
-            
-          </div>
         </div>
       </div>
     </ThemeProvider>

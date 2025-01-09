@@ -3,7 +3,7 @@
 import TabbedEditor from './components/TabbedEditor';
 import { ThemeProvider } from './components/theme-provider';
 import { useEffect, useState, useRef } from 'react';
-
+import { Toaster } from '@/components/ui/toaster'
 import * as monacoEditor from 'monaco-editor';
 import { File } from './types/types';
 
@@ -53,6 +53,7 @@ function App() {
             />
         </div>
       </div>
+      <Toaster />
     </ThemeProvider>
   );
 }

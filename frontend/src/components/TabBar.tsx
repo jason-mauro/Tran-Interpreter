@@ -4,6 +4,16 @@ import React, { useState, useRef, useEffect } from 'react'
 import { X, Plus } from 'lucide-react'
 import { File } from '../types/types'
 import * as monacoEditor from 'monaco-editor'
+import { useToast } from '@/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 
 interface TabProps {
     files: Record<string, File>
@@ -14,6 +24,7 @@ interface TabProps {
 }
 
 const TabBar: React.FC<TabProps> = ({ files, setFiles, setFileName, fileName, editorRef}) => {
+  const { toast } = useToast();
   const [nextId, setNextId] = useState(Object.keys(files).length);
   const [tabs, setTabs] = useState<string[]>(Object.keys(files));
   const [showScrollbar, setShowScrollbar] = useState(false)
@@ -129,9 +140,32 @@ const TabBar: React.FC<TabProps> = ({ files, setFiles, setFileName, fileName, ed
   // setEditingTabID
 
   const handleTabRename = (oldName: string, newName: string) => {
-    // If the new name is the same as the old name or already exists
-    if (newName === oldName || tabs.includes(newName)) {
+    // If the new name is the same as the old name
+    if (newName === oldName){
       setEditingTabName(null);
+      return;
+    } else if (tabs.includes(newName) || newName === '') {
+      if (newName === '') {
+        toast({
+          variant: 'destructive',
+          title: 'A file name must be provided',
+          description: 'Please provide a name for the file',
+          action: <ToastAction altText="Rename">Rename</ToastAction> 
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: `File: "${newName}" already exists`,
+          description: 'Please provide a unique name for the file',
+          action: <ToastAction altText="Rename">Rename</ToastAction> 
+        });
+      }
+      setTimeout(() => {
+        if (newTabInputRef.current) {
+          newTabInputRef.current.focus();
+          newTabInputRef.current.select();
+        }
+      }, 0);
       return;
     }
 
@@ -184,8 +218,9 @@ const TabBar: React.FC<TabProps> = ({ files, setFiles, setFileName, fileName, ed
     setTimeout(() => {
       if (newTabInputRef.current) {
         newTabInputRef.current.focus();
+        newTabInputRef.current.select();
       }
-    }, 3);
+    }, 0);
   };
   
 
@@ -223,7 +258,7 @@ const TabBar: React.FC<TabProps> = ({ files, setFiles, setFileName, fileName, ed
             {tab === fileName && tab === editingTabName ? (
                 <input 
                 ref={newTabInputRef}
-                className="flex-1 text-sm text-card-foreground truncate w-[80%]" 
+                className="flex-1 text-sm text-card-foreground truncate w-[80%] bg-card" 
                 defaultValue={tab}
                 onBlur={(e) => {
                     handleTabRename(tab, e.target.value);
@@ -235,7 +270,6 @@ const TabBar: React.FC<TabProps> = ({ files, setFiles, setFileName, fileName, ed
                         e.currentTarget.blur();
                     }
                 }}
-                autoFocus
             />
             ) : (
                 <span 

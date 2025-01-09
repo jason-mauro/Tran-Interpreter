@@ -3,22 +3,25 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { X, Plus } from 'lucide-react'
 import { File } from '../types/types'
+import * as monacoEditor from 'monaco-editor'
 
 interface TabProps {
     files: Record<string, File>
     setFiles: React.Dispatch<React.SetStateAction<Record<string, File>>>
     setFileName: React.Dispatch<React.SetStateAction<string>>
+    fileName: string;
+    editorRef: React.MutableRefObject<monacoEditor.editor.IStandaloneCodeEditor | null>
 }
 
-const TabBar: React.FC<TabProps> = ({ files, setFiles, setFileName}) => {
-  const [activeTab, setActiveTab] = useState<string>("demo.tran");
-  const [nextId, setNextId] = useState(1)
+const TabBar: React.FC<TabProps> = ({ files, setFiles, setFileName, fileName, editorRef}) => {
+  const [nextId, setNextId] = useState(Object.keys(files).length);
   const [tabs, setTabs] = useState<string[]>(Object.keys(files));
   const [showScrollbar, setShowScrollbar] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const scrollbarRef = useRef<HTMLDivElement>(null)
   const [editingTabName, setEditingTabName] = useState<string | null>(null)
+  const newTabInputRef = useRef<HTMLInputElement | null>(null)
 
 
   useEffect(() => {
@@ -89,32 +92,102 @@ const TabBar: React.FC<TabProps> = ({ files, setFiles, setFileName}) => {
   }, []);
 
   // activateTab
-  const activateTab = (tab: string) => {
-    setFiles(current => ({
-      ...current,
-      [activeTab]: {
-        ...current[activeTab],
-        active: false
-      }
-      ,
-      [tab]: {
-        ...current[tab],
-        active: true
-      }
-    }));
-    setActiveTab(tab);
+  const switchTab = (tab: string) => {
+    if (tab === fileName || tab === editingTabName) return;
+    
+    // Save current editor's view state before switching
+    if (editorRef.current) {
+      const currentViewState = editorRef.current.saveViewState();
+      setFiles(prevFiles => ({
+        ...prevFiles,
+        [fileName]: {
+          ...prevFiles[fileName],
+          viewState: currentViewState
+        }
+      }));
+    }
+  
+    // Switch to new tab
     setFileName(tab);
+  
+    // Restore view state after switch
+    if (editorRef.current && files[tab].viewState) {
+      // Use setTimeout to ensure editor is ready
+      setTimeout(() => {
+        if (editorRef.current) {
+          editorRef.current.restoreViewState(files[tab].viewState!);
+        }
+      }, 0);
+    }
   };
 
   
   // handleTabRename
 
-  // setEditingTabID
-
-  // removeTab
-
   
 
+  // setEditingTabID
+
+  const handleTabRename = (oldName: string, newName: string) => {
+    // If the new name is the same as the old name or already exists
+    if (newName === oldName || tabs.includes(newName)) {
+      setEditingTabName(null);
+      return;
+    }
+
+    setFiles((prevFiles) => {
+      const newFiles = { ...prevFiles };
+      newFiles[newName] = newFiles[oldName];
+      delete newFiles[oldName];
+      return newFiles;
+    });
+    setFileName(newName)
+    setTabs((prevTabs) => {
+      const newTabs = [...prevTabs];
+      newTabs[newTabs.indexOf(oldName)] = newName;
+      return newTabs;
+    });
+  }
+
+  // removeTab
+  const removeTab = (tab: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    // Rest of existing removeTab code...
+    const tabIndex = tabs.indexOf(tab);
+    const newTabs = tabs.filter((t) => t !== tab);
+    setTabs(newTabs);
+    setFiles((prevFiles) => {
+      const newFiles = { ...prevFiles };
+      delete newFiles[tab];
+      return newFiles;
+    });
+    const newIndex = Math.min(tabIndex, newTabs.length - 1);
+    setFileName(newTabs[newIndex]);
+  }
+
+  const addTab = () => {
+    const newTabName = `Untitled-${nextId}`;
+    setNextId((prevId) => prevId + 1);
+    setTabs((prevTabs) => [...prevTabs, newTabName]);
+    setFiles((prevFiles) => ({
+      ...prevFiles,
+      [newTabName]: {
+        id: nextId,
+        name: newTabName,
+        content: '',
+        viewState: null,
+      },
+    }));
+    setEditingTabName(newTabName);
+    setFileName(newTabName);
+
+    setTimeout(() => {
+      if (newTabInputRef.current) {
+        newTabInputRef.current.focus();
+      }
+    }, 3);
+  };
+  
 
   return (
     <div 
@@ -135,27 +208,30 @@ const TabBar: React.FC<TabProps> = ({ files, setFiles, setFileName}) => {
         {tabs.map((tab) => (
           <div
             key={files[tab].id}
-            onClick={() => activateTab(tab)}
+            onClick={() => switchTab(tab)}
             className={`
               flex items-center justify-between min-w-[120px] max-w-[200px] h-8 px-3
               cursor-pointer select-none
               border-t border-r border-l
               ${
-                files[tab].active
+                tab === fileName 
                   ? 'bg-card border-ring rounded-lg border'
                   : 'bg-card rounded-lg border border-input'
               }
             `}
           >
-            {files[tab].active && tab === editingTabName ? (
+            {tab === fileName && tab === editingTabName ? (
                 <input 
+                ref={newTabInputRef}
                 className="flex-1 text-sm text-card-foreground truncate w-[80%]" 
-                defaultValue={files[tab].name}
+                defaultValue={tab}
                 onBlur={(e) => {
-                    //handleTabRename(file.name, e.target.value);
+                    handleTabRename(tab, e.target.value);
                 }}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.stopPropagation();
                         e.currentTarget.blur();
                     }
                 }}
@@ -171,7 +247,7 @@ const TabBar: React.FC<TabProps> = ({ files, setFiles, setFileName}) => {
             )}
             
             <button
-              //onClick={(e) => removeTab(tab, e)}
+              onClick={(e) => removeTab(tab, e)}
               className="ml-2 p-0.5 rounded-sm hover:bg-accent text-card-foreground hover:text-accent-foreground"
             >
               <X size={14} />
@@ -202,7 +278,7 @@ const TabBar: React.FC<TabProps> = ({ files, setFiles, setFileName}) => {
         </div>
       )}
       <button
-        //onClick={addTab}
+        onClick={addTab}
         className="flex items-center justify-center w-8 h-8 hover:bg-muted-foreground text-primary hover:text-primary"
       >
         <Plus size={16} />

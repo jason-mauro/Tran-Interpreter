@@ -4,6 +4,5 @@ export interface File {
       id: number;
       name: string;
       content: string;
-      active: boolean;
-      viewState: monacoEditor.editor.IEditorViewState| null;
+      viewState: monacoEditor.editor.ICodeEditorViewState| null;
   }

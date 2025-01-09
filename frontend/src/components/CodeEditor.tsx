@@ -1,16 +1,19 @@
 import Editor, { loader } from '@monaco-editor/react';
 import React, { useEffect } from 'react';
 import * as monacoEditor from 'monaco-editor';
+import { File } from '../types/types';
 
 interface EditorProps {
-    path: string;
+    fileName: string;
     value: string
     theme: string;
     keybinds: string;
     editorRef: React.MutableRefObject<monacoEditor.editor.IStandaloneCodeEditor | null>
+    setFiles: React.Dispatch<React.SetStateAction<Record<string, File>>>;
+    files: Record<string, File>;
 }
 
-const CodeEditor: React.FC<EditorProps> = ({path, value, theme, keybinds, editorRef }) => {
+const CodeEditor: React.FC<EditorProps> = ({fileName, value, theme, keybinds, editorRef, setFiles , files}) => {
 
   useEffect(() => {
     const loadTheme = async () => {
@@ -38,8 +41,32 @@ const CodeEditor: React.FC<EditorProps> = ({path, value, theme, keybinds, editor
     };
 
     loadTheme();
-  }, [theme]);
-    
+  }, [theme, editorRef]);
+
+  const restoreEditorState = () => {
+    if (editorRef.current && files[fileName].viewState) {
+      const editor = editorRef.current;
+      editor.restoreViewState(files[fileName].viewState);
+    }
+  }
+
+  useEffect(() => {
+    restoreEditorState();
+  }, []);
+  
+
+  const handleEditorChange = (value: string | undefined) => {
+    // No content change return
+    if (!value) return;
+    // Update the content for the current File
+    setFiles(current => ({
+      ...current,
+      [fileName]: {
+        ...current[fileName],
+        content: value
+      }
+    }));
+  };
     
     return (
         <Editor
@@ -47,9 +74,11 @@ const CodeEditor: React.FC<EditorProps> = ({path, value, theme, keybinds, editor
             width={"100%"}
             language="python"
             theme={theme}
-            path={path}
+            path={fileName}
             defaultValue={value}
             onMount={(editor) => editorRef.current = editor}
+            onChange={handleEditorChange}
+
         />
     );
 };

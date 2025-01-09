@@ -9,12 +9,12 @@ import { File } from './types/types';
 
 
 function App() {
-  const [theme, setTheme] = useState<string>("Github Light");
+  const [theme, setTheme] = useState<string>("GitHub Light");
   const [keybinds, setKeybinds] = useState<string>("Default");
   const editorRef = useRef<monacoEditor.editor.IStandaloneCodeEditor | null>(null);
   const [files, setFiles] = useState<Record<string, File>>({
-    "demo.tran": {id: 0, name: "demo.tran", content: `class demo\n\tshared start()\n\t\tconsole.write(\"Hello World\")`, active: true, viewState: null},
-    "demo2.tran": {id: 1, name: "demo2.tran", content: `class demo2\n\tshared start()\n\t\tconsole.write(\"Hello World\")`, active: false, viewState: null}
+    "demo.tran": {id: 0, name: "demo.tran", content: `class demo\n\tshared start()\n\t\tconsole.write(\"Hello World\")`, viewState: null},
+    "demo2.tran": {id: 1, name: "demo2.tran", content: `class demo2\n\tshared start()\n\t\tconsole.write(\"Hello World\")`, viewState: null}
   })
 
   const [fileName, setFileName] = useState<string>("demo.tran");
@@ -23,7 +23,7 @@ function App() {
 
   useEffect(() => {
     editorRef?.current?.focus();
-  }, [file.name]);
+  }, [fileName, file]);
 
 
   const handleKeybindChange = (keybinds : string ) => {

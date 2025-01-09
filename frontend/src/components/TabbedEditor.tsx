@@ -14,7 +14,7 @@ interface TabbedEditorProps {
     theme: string;
     keybinds: string;
     setFileName: React.Dispatch<React.SetStateAction<string>>;
-    setFiles: React.Dispatch<React.SetStateAction<Record<string, File>>>;
+    setFiles: React.Dispatch<React.SetStateAction<Record<string, File>>>
     files: Record<string, File>;
     fileName: string;
 }
@@ -29,19 +29,25 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({ handleKeybindChange, editor
 
 
 
+
+
     return (
         <div className="flex flex-col w-[60%] bg-accent p-4 rounded-lg border border-input shadow-sm">
             <TabBar 
                 files={files}
                 setFileName={setFileName}
                 setFiles={setFiles}
+                fileName={fileName}
+                editorRef={editorRef}
             />
             <CodeEditor
                 theme={theme}
                 value={files[fileName].content}
-                path={files[fileName].name}
+                fileName={fileName}
                 keybinds={keybinds}
                 editorRef={editorRef}
+                setFiles={setFiles}
+                files={files}
             />
             <div className="flex flex-row py-1">
                 <ThemePicker onThemeChange={handleThemeChange} />

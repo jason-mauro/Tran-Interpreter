@@ -1,12 +1,11 @@
 "use client";
 
 import TabbedEditor from './components/TabbedEditor';
-import { ThemeProvider } from './components/theme-provider';
 import { useEffect, useState, useRef } from 'react';
 import { Toaster } from '@/components/ui/toaster'
 import * as monacoEditor from 'monaco-editor';
 import { File } from './types/types';
-
+import { ThemeProvider } from '@/components/theme-provider';
 
 function App() {
   const [editorTheme, setEditorTheme] = useState<string>("GitHub Light");
@@ -35,7 +34,7 @@ function App() {
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-      <div className = "w-full h-100vh bg-background">
+      <div className = "w-full h-screen bg-background">
         <div className="w-full h-[50px] bg-primary flex items-center p-2">
           <h1 className="text-primary-foreground text-2xl font-sans">Tran Interpreter</h1>
         </div>

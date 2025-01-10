@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 
 type Theme = "dark" | "light" | "system"
@@ -22,56 +23,65 @@ const initialState: ThemeProviderState = {
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
-export function ThemeProvider({
+const isClient = typeof window !== 'undefined'
+
+function ThemeProvider({
   children,
   defaultTheme = "system",
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  )
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (!isClient) return defaultTheme
+    return (localStorage.getItem(storageKey) as Theme) || defaultTheme
+  })
+
+  const applyTheme = (newTheme: "light" | "dark") => {
+    const root = window.document.documentElement
+    root.classList.remove("light", "dark")
+    root.classList.add(newTheme)
+  }
 
   useEffect(() => {
-    const root = window.document.documentElement
+    if (!isClient) return
 
-    // Remove both classes first
-    root.classList.remove("light", "dark")
+    const applySystemTheme = () => {
+      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? 
+        "dark" : "light"
+      applyTheme(systemTheme)
+    }
 
     if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-      root.classList.add(systemTheme ? "dark" : "light")
-
-      // Add listener for system theme changes
+      applySystemTheme()
+      
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
-      const handleChange = () => {
-        root.classList.remove("light", "dark")
-        root.classList.add(mediaQuery.matches ? "dark" : "light")
-      }
-
+      const handleChange = () => applySystemTheme()
+      
       mediaQuery.addEventListener("change", handleChange)
       return () => mediaQuery.removeEventListener("change", handleChange)
     } else {
-      root.classList.add(theme)
+      applyTheme(theme)
     }
   }, [theme])
 
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
-      setTheme(theme)
+    setTheme: (newTheme: Theme) => {
+      if (isClient) {
+        localStorage.setItem(storageKey, newTheme)
+      }
+      setTheme(newTheme)
     },
   }
 
   return (
-    <ThemeProviderContext.Provider {...props} value={value}>
+    <ThemeProviderContext.Provider value={value} {...props}>
       {children}
     </ThemeProviderContext.Provider>
   )
 }
 
-export const useTheme = () => {
+function useTheme() {
   const context = useContext(ThemeProviderContext)
 
   if (context === undefined)
@@ -79,3 +89,5 @@ export const useTheme = () => {
 
   return context
 }
+
+export { ThemeProvider, useTheme }

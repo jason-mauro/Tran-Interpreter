@@ -13,7 +13,7 @@ interface EditorProps {
     files: Record<string, File>;
 }
 
-const CodeEditor: React.FC<EditorProps> = ({fileName, value, theme, keybinds, editorRef, setFiles , files}) => {
+const CodeEditor: React.FC<EditorProps> = ({fileName, value, theme, editorRef, setFiles , files}) => {
 
   useEffect(() => {
     const loadTheme = async () => {
@@ -74,7 +74,7 @@ const CodeEditor: React.FC<EditorProps> = ({fileName, value, theme, keybinds, ed
             width={"100%"}
             language="python"
             theme={theme}
-            path={fileName}
+            path={files[fileName].id.toString()}
             defaultValue={value}
             onMount={(editor) => editorRef.current = editor}
             onChange={handleEditorChange}

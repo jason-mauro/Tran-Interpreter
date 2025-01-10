@@ -1,19 +1,12 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from 'react'
-import { X, Plus } from 'lucide-react'
+import {  Plus } from 'lucide-react'
 import { File } from '../types/types'
 import * as monacoEditor from 'monaco-editor'
 import { useToast } from '@/hooks/use-toast';
 import { ToastAction } from '@/components/ui/toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+import CloseTab from './CloseTab'
 
 interface TabProps {
     files: Record<string, File>
@@ -280,12 +273,7 @@ const TabBar: React.FC<TabProps> = ({ files, setFiles, setFileName, fileName, ed
                 </span>
             )}
             
-            <button
-              onClick={(e) => removeTab(tab, e)}
-              className="ml-2 p-0.5 rounded-sm hover:bg-accent text-card-foreground hover:text-accent-foreground"
-            >
-              <X size={14} />
-            </button>
+            <CloseTab tab={tab} removeTab={removeTab} />
           </div>
         ))}
       </div>

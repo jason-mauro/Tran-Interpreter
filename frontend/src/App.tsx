@@ -9,7 +9,7 @@ import { File } from './types/types';
 
 
 function App() {
-  const [theme, setTheme] = useState<string>("GitHub Light");
+  const [editorTheme, setEditorTheme] = useState<string>("GitHub Light");
   const [keybinds, setKeybinds] = useState<string>("Default");
   const editorRef = useRef<monacoEditor.editor.IStandaloneCodeEditor | null>(null);
   const [files, setFiles] = useState<Record<string, File>>({
@@ -29,8 +29,8 @@ function App() {
   const handleKeybindChange = (keybinds : string ) => {
     setKeybinds(keybinds);
   }
-  const handleThemeChange = (theme : string) => {
-    setTheme(theme);
+  const handleThemeChange = (newTheme: string) => {
+    setEditorTheme(newTheme);
   }
 
   return (
@@ -44,7 +44,7 @@ function App() {
             handleKeybindChange={handleKeybindChange} 
             editorRef={editorRef}
             handleThemeChange={handleThemeChange}
-            theme={theme}
+            theme={editorTheme}
             keybinds={keybinds}
             setFileName={setFileName}
             setFiles={setFiles}

@@ -1,44 +1,37 @@
 package com.Tran.service;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import com.Tran.config.WebSocketConfig;
+import com.Tran.interpreter.Interpreter;
+import com.Tran.lexer.Lexer;
+import com.Tran.parser.AST.TranNode;
+import com.Tran.parser.Parser;
+import com.Tran.utils.Token;
+import com.Tran.utils.InterpreterWebSocketHandler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.socket.WebSocketSession;
+
+import java.util.List;
 
 @Service
 public class InterpreterService {
+    @Autowired
+    public InterpreterWebSocketHandler webSocketHandler;
 
-    @Async
-    public void interpretFileWithStreaming(MultipartFile file, SseEmitter emitter) {
+    public void executeCode(String code, String sessionId) {
+        WebSocketSession session = webSocketHandler.getSession(sessionId);
         try {
-            BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(file.getInputStream())
-            );
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                // TODO: Replace with your actual interpreter logic
-                String interpretedResult = interpretLine(line);
-
-                // Send the interpreted result to the client
-                emitter.send(interpretedResult);
-
-                // Simulate some processing time (remove in production)
-                Thread.sleep(100);
-            }
-
-            // Signal the end of processing
-            emitter.complete();
-
-        } catch (Exception e) {
-            emitter.completeWithError(e);
+            TranNode ast = new TranNode();
+            Lexer lexer = new Lexer(code);
+            List<Token> tokens = lexer.Lex();
+            Parser parser = new Parser(ast, tokens);
+            parser.Tran();
+            Interpreter interpreter = new Interpreter(ast, session);
+            interpreter.start();
+        } catch (Exception e){
+            // Send the error to the client
+            webSocketHandler.sendOutput(sessionId, "Code Execution Failed: " + e.toString());
         }
-    }
 
-    private String interpretLine(String line) {
-        // TODO: Implement your interpreter logic here
-        return "Interpreted: " + line;
     }
 }

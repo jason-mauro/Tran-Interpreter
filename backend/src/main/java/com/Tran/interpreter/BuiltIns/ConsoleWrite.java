@@ -2,6 +2,7 @@ package com.Tran.interpreter.BuiltIns;
 
 import com.Tran.parser.AST.BuiltInMethodDeclarationNode;
 import com.Tran.interpreter.DataTypes.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -10,8 +11,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class ConsoleWrite extends BuiltInMethodDeclarationNode {
-    public WebSocketSession session;
-    public LinkedList<String> console = new LinkedList<>();
+    public SseEmitter sseEmitter;
+
     @Override
     public List<InterpreterDataType> Execute(List<InterpreterDataType> params) {
         StringBuilder sb = new StringBuilder();
@@ -20,14 +21,17 @@ public class ConsoleWrite extends BuiltInMethodDeclarationNode {
             System.out.print(i.toString());
         }
         System.out.println();
-        console.add(sb.toString());
 
         // Send output to the frontend
-        if (session != null && session.isOpen()) {
+        if (sseEmitter != null) {
             try {
-                session.sendMessage(new TextMessage(sb.toString()));
+                sseEmitter.send(SseEmitter.event()
+                        .name("CONSOLE_OUTPUT")
+                        .data(sb.toString())
+                        .id(String.valueOf(System.currentTimeMillis())));
             } catch (IOException e) {
-                System.err.println("Failed to send output to frontend: " + e.getMessage());
+                System.err.println("Failed to send console output");
+                sseEmitter.completeWithError(e);
             }
         }
         return List.of();

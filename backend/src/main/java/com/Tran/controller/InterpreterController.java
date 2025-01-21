@@ -4,6 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.Tran.service.InterpreterService;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/interpreter")
@@ -11,11 +14,16 @@ public class InterpreterController {
     @Autowired
     private InterpreterService interpreterService;
 
-    @PostMapping("/execute")
-    public ResponseEntity<String> execute(@RequestBody String code,
-                                          @RequestHeader("WebSocket-Session-Id") String sessionID) {
-        interpreterService.executeCode(code, sessionID);
-        return ResponseEntity.ok("Code execution starting...");
+    @GetMapping("/console")
+    public SseEmitter console(@RequestParam String clientId) {
+        return interpreterService.createConsoleEmitter(clientId);
     }
+
+    @PostMapping("/execute")
+    public void execute(@RequestParam String clientId, @RequestBody Map<String, String> payload) {
+        String code = payload.get("code");
+        interpreterService.executeCode(code, clientId);
+    }
+
 
 }

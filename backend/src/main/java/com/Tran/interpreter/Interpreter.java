@@ -18,13 +18,13 @@ public class Interpreter {
      * Add any built-in methods to the AST
      * @param top - the head of the AST
      */
-    public Interpreter(TranNode top, WebSocketSession webSocketSession) throws Exception{
+    public Interpreter(TranNode top, ConsoleWrite consoleWrite){
         // Populate the members
         this.top = top;
         // Add built-in class and methods for Console
         ClassNode console = new ClassNode();
         console.name = "console";
-        console.methods.add(new ConsoleWrite(){{isVariadic = true; isShared = true; name = "write"; session = webSocketSession; }});
+        console.methods.add(consoleWrite);
         top.Classes.add(console);
         // Iterator interface
         top.Interfaces.add(new InterfaceNode(){{this.name = "iterator"; this.methods.add(new MethodHeaderNode(){{this.name = "getNext"; this.returns.add(new VariableDeclarationNode(){{this.name = "b"; this.type = "boolean";}}); this.returns.add(new VariableDeclarationNode(){{this.name = "i"; this.type = "number";}});}});}});
@@ -46,7 +46,6 @@ public class Interpreter {
         getNext.statements.add(new AssignmentNode(){{this.target = new VariableReferenceNode(){{this.name ="i";}}; this.expression = new VariableReferenceNode(){{this.name ="currentValue";}};}});
         NumberIterator.methods.add(getNext);
         top.Classes.add(NumberIterator);
-        SemanticAnalysis(top);
     }
 
 
@@ -118,6 +117,14 @@ public class Interpreter {
     }
 
     /**
+     * Mutator for the TranNode which contains the ast
+     * @param top - new TranNode
+     */
+    public void setTop(TranNode top) {
+        this.top = top;
+    }
+
+    /**
      * This is the public interface to the interpreter. After parsing, we will create an interpreter and call start to
      * start interpreting the code.
      *
@@ -125,7 +132,9 @@ public class Interpreter {
      * Call "InterpretMethodCall" on that method, then return.
      * Throw an exception if no such method exists.
      */
-    public void start() {
+    public void start() throws Exception {
+        // Populate the hash maps for the symbol table
+        SemanticAnalysis(top);
          //Search through classes in top and find a method called start which isShared.
          //Create the methods to be Interpreter Data Types
         for (var c : top.Classes){

@@ -15,8 +15,14 @@ import java.util.List;
 
 @Service
 public class InterpreterService {
+
+    private final InterpreterWebSocketHandler webSocketHandler;
+
     @Autowired
-    public InterpreterWebSocketHandler webSocketHandler;
+    public InterpreterService(InterpreterWebSocketHandler webSocketHandler) {
+        this.webSocketHandler = webSocketHandler;
+    }
+
 
     public void executeCode(String code, String sessionId) {
         WebSocketSession session = webSocketHandler.getSession(sessionId);

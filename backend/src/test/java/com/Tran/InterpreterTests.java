@@ -14,17 +14,15 @@ public class InterpreterTests {
     @Test
     public void SimpleAdd() {
         String program = """
-                class SimpleAdd
-                    
-                    shared start()
-                        number x
-                        number y
-                        number z
-                        
-                        x = 6
-                        y = 6
-                        z = x + y
-                        console.write(z)
+                class demo
+                	fib(number n): number x
+                		if n <= 1 and n == 5
+                			x = n
+                		else
+                			x = fib(n - 1) + fib(n-2)
+                
+                	shared start()
+                		console.write(fib(10))
                 """;
 
         var tranNode = run(program);

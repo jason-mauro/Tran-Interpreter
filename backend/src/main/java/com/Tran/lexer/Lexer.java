@@ -141,13 +141,9 @@ public class Lexer {
         columnNumber++;
         while(!textManager.isAtEnd()){
             char peekedCharacter = textManager.peekCharacter();
-            if (!Character.isLetter(peekedCharacter)){
-                if (Character.isDigit(peekedCharacter)) {
-                    throw new SyntaxErrorException("Invalid Characters in variable name", lineNumber, columnNumber);
-                } else {
-                    // Check if the buffer is a keyword and return the correct token
-                    return knownKeywords.containsKey(wordBuffer.toString()) ? new Token(knownKeywords.get(wordBuffer.toString()), lineNumber, columnNumber) : new Token(Token.TokenTypes.WORD, lineNumber, columnNumber, wordBuffer.toString());
-                }
+            // Allowed characters are Letters, Digits, and '_'
+            if (!Character.isLetter(peekedCharacter) && !Character.isDigit(peekedCharacter) && peekedCharacter != '_') {
+                return knownKeywords.containsKey(wordBuffer.toString()) ? new Token(knownKeywords.get(wordBuffer.toString()), lineNumber, columnNumber) : knownSymbols.containsKey(wordBuffer.toString()) ? new Token(knownSymbols.get(wordBuffer.toString()), lineNumber, columnNumber) : new Token(Token.TokenTypes.WORD, lineNumber, columnNumber, wordBuffer.toString());
             } else {
                 wordBuffer.append(textManager.getCharacter());
                 columnNumber++;

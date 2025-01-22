@@ -112,7 +112,7 @@ public class InterpreterService {
                 Interpreter interpreter = new Interpreter(ast, consoleWrite);
                 interpreter.start();
 
-                sendEvent(emitter, "COMPLETED", "Execution completed");
+                sendEvent(emitter, "EXECUTION_COMPLETED", "Execution completed");
             } catch (Exception e) {
                 try {
                     sendEvent(emitter, "CONSOLE_OUTPUT", e.toString());

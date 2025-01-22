@@ -37,33 +37,39 @@ function App() {
   }
 
   const executeCode = async () => {
-	const clientId = Date.now(); // Unique ID for this execution
+	const clientId = Date.now(); // Get a unique ID for each code execution
 	const code = files[fileName].content;
 	
-	// Close existing SSE connection if any
+	// Close existing SSE connections
 	if (eventSourceRef.current) {
 	  eventSourceRef.current.close();
 	}
   
-	// Set up new SSE connection
+	// Set up the SSE connection for the console
 	eventSourceRef.current = new EventSource(`http://localhost:8080/api/interpreter/console/${clientId}`);
   
 	// Handle SSE events
 	eventSourceRef.current.addEventListener('CONSOLE_OUTPUT', (event) => {
-	  setOutput(prev => [...prev, event.data]); // Update output when a new event is received
+	  setOutput(prev => [...prev, event.data]); // Save console output when it is sent
 	});
+
+  
   
 	eventSourceRef.current.onerror = (error) => {
 	  console.error('SSE Error:', error);
 	  eventSourceRef.current?.close();
 	};
   
-	// Wait for SSE connection to be established
+	// Wait for SSE connection to be established before executing
 	eventSourceRef.current.onopen = async () => {
 	  console.log("SSE connection established");
 	  console.log(code);
 
-	  // Execute the code after SSE is confirmed
+    eventSourceRef.current?.addEventListener('EXECUTION_COMPLETED', (event) => {
+      eventSourceRef.current?.close();
+    });
+
+	  // Execute the code
 	  try {
 		const response = await fetch(`http://localhost:8080/api/interpreter/execute/${clientId}`, {
 		  method: 'POST',

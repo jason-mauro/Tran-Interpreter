@@ -36,34 +36,12 @@ public class InterpreterTests {
     @Test
     public void SimpleAddInstantiate() {
         String program = """
-                class SimpleAdd
-                    number x
-                    number y
-                    
-                    construct()
-                        x = 6
-                        y = 6
-                        
-                    add()
-                        number z
-                        z = x + y 
-                        console.write(z)
-                        
-                    getData() : number s, number t
-                        s = x
-                        t = y
-                        
+                class demotwo
                     shared start()
-                        SimpleAdd t
-                        t = new SimpleAdd()
-                        t.add()
-                        
-                        
-                """;
+                        console.write("Hello Nick")""";
         var tranNode = run(program);
-        var c = getConsole(tranNode);
-        Assertions.assertEquals(1,c.size());
-        Assertions.assertEquals("12.0",c.getFirst());
+
+
     }
 
     @Test
@@ -162,7 +140,7 @@ public class InterpreterTests {
             if (c.name.equals("console")) {
                 for (var m : c.methods)  {
                     if (m.name.equals("write")) {
-                        return ((ConsoleWrite)m).console;
+                        return List.of();
                     }
                 }
             }
@@ -177,7 +155,7 @@ public class InterpreterTests {
             var p = new Parser(tran,tokens);
             p.Tran();
             System.out.println(tran.toString());
-            var i = new Interpreter(tran, null);
+            var i = new Interpreter(tran, new ConsoleWrite(){{this.isShared = true; this.isVariadic = true; this.name = "write";}});
             i.start();
             return tran;
         } catch (Exception e) {

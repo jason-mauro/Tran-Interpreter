@@ -581,7 +581,7 @@ public class Parser {
         var expression = MethodCallExpression();
         if (expression.isPresent()) {
             if (expression.get() instanceof MethodCallExpressionNode) {
-                if (!tokenManager.peek(0).get().getType().equals(Token.TokenTypes.NEWLINE))
+                if (!tokenManager.peek(0).get().getType().equals(Token.TokenTypes.DEDENT) && !tokenManager.peek(0).get().getType().equals(Token.TokenTypes.NEWLINE))
                     throw new SyntaxErrorException("NEWLINE expected after a method call expression", tokenManager.getCurrentLine(), tokenManager.getCurrentColumnNumber());
                 return Optional.of(new MethodCallStatementNode((MethodCallExpressionNode) expression.get()));
             } else {

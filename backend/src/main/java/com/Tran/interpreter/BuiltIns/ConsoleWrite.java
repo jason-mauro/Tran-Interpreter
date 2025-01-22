@@ -12,6 +12,7 @@ import java.util.List;
 
 public class ConsoleWrite extends BuiltInMethodDeclarationNode {
     public SseEmitter sseEmitter;
+    List<String> console = new LinkedList<>();
 
     @Override
     public List<InterpreterDataType> Execute(List<InterpreterDataType> params) {
@@ -21,6 +22,7 @@ public class ConsoleWrite extends BuiltInMethodDeclarationNode {
             System.out.print(i.toString());
         }
         System.out.println();
+        console.add(sb.toString());
 
         // Send output to the frontend
         if (sseEmitter != null) {

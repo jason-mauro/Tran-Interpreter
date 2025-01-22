@@ -1,20 +1,15 @@
 package com.Tran.service;
 
-import com.Tran.config.WebSocketConfig;
 import com.Tran.interpreter.BuiltIns.ConsoleWrite;
 import com.Tran.interpreter.Interpreter;
 import com.Tran.lexer.Lexer;
 import com.Tran.parser.AST.TranNode;
 import com.Tran.parser.Parser;
 import com.Tran.utils.Token;
-import com.Tran.utils.InterpreterWebSocketHandler;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-import org.springframework.web.socket.WebSocketSession;
 
 import java.io.IOException;
-import java.sql.SQLOutput;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -33,6 +28,31 @@ public class InterpreterService {
      * @return The SseEmitter instance for the client.
      */
     public SseEmitter createConsoleEmitter(String clientId) {
+        SseEmitter emitter = getEmitter(clientId);
+
+        // Store the emitter for the client
+        emitters.put(clientId, emitter);
+
+        // Create a new ConsoleWrite instance and associate it with the client
+        ConsoleWrite consoleWrite = new ConsoleWrite() {{
+            isVariadic = true;
+            isShared = true;
+            name = "write";
+            sseEmitter = emitter;
+        }};
+        consoleWriters.put(clientId, consoleWrite);
+
+        // Send an immediate response to confirm connection
+        try {
+            sendEvent(emitter, "CONNECTED", "SSE connection established");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return emitter;
+    }
+
+    private SseEmitter getEmitter(String clientId) {
         SseEmitter emitter = new SseEmitter(30000L); // Set timeout to 30 seconds
 
         // Cleanup logic on completion or timeout
@@ -47,19 +67,6 @@ public class InterpreterService {
             consoleWriters.remove(clientId);
             System.out.println("SSE connection timed out for client: " + clientId);
         });
-
-        // Store the emitter for the client
-        emitters.put(clientId, emitter);
-
-        // Create a new ConsoleWrite instance and associate it with the client
-        ConsoleWrite consoleWrite = new ConsoleWrite() {{
-            isVariadic = true;
-            isShared = true;
-            name = "write";
-            sseEmitter = emitter;
-        }};
-        consoleWriters.put(clientId, consoleWrite);
-
         return emitter;
     }
 
@@ -108,7 +115,7 @@ public class InterpreterService {
                 sendEvent(emitter, "COMPLETED", "Execution completed");
             } catch (Exception e) {
                 try {
-                    sendEvent(emitter, "ERROR", e.getMessage());
+                    sendEvent(emitter, "CONSOLE_OUTPUT", e.toString());
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }

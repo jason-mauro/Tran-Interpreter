@@ -25,6 +25,11 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
 const isClient = typeof window !== 'undefined'
 
+const getSystemTheme = (): "light" | "dark" => {
+  if (!isClient) return "light"
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+}
+
 function ThemeProvider({
   children,
   defaultTheme = "system",
@@ -36,19 +41,27 @@ function ThemeProvider({
     return (localStorage.getItem(storageKey) as Theme) || defaultTheme
   })
 
-  const applyTheme = (newTheme: "light" | "dark") => {
+  // Apply theme immediately on mount
+  useEffect(() => {
     const root = window.document.documentElement
     root.classList.remove("light", "dark")
-    root.classList.add(newTheme)
-  }
+
+    if (theme === "system") {
+      const systemTheme = getSystemTheme()
+      root.classList.add(systemTheme)
+    } else {
+      root.classList.add(theme)
+    }
+  }, [])
 
   useEffect(() => {
     if (!isClient) return
 
     const applySystemTheme = () => {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? 
-        "dark" : "light"
-      applyTheme(systemTheme)
+      const systemTheme = getSystemTheme()
+      const root = window.document.documentElement
+      root.classList.remove("light", "dark")
+      root.classList.add(systemTheme)
     }
 
     if (theme === "system") {
@@ -60,7 +73,9 @@ function ThemeProvider({
       mediaQuery.addEventListener("change", handleChange)
       return () => mediaQuery.removeEventListener("change", handleChange)
     } else {
-      applyTheme(theme)
+      const root = window.document.documentElement
+      root.classList.remove("light", "dark")
+      root.classList.add(theme)
     }
   }, [theme])
 

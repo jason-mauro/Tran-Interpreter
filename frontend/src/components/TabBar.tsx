@@ -188,8 +188,13 @@ const TabBar: React.FC<TabProps> = ({ files, setFiles, setFileName, fileName, ed
       delete newFiles[tab];
       return newFiles;
     });
-    const newIndex = Math.min(tabIndex, newTabs.length - 1);
-    setFileName(newTabs[newIndex]);
+    if (newTabs.length === 0) {
+      setFileName("");
+    }else {
+      const newIndex = Math.min(tabIndex, newTabs.length - 1);
+      setFileName(newTabs[newIndex]);
+    }
+    
   }
 
   const addTab = () => {

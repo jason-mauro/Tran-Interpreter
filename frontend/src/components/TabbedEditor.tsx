@@ -57,12 +57,13 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
 
 	const [context, setContext] = React.useState<string>("current");
 
+	// TODO: Add delimiters to files to track errors for each file $name$ and create new token for them in the lexer for better errors
 	const executeCode = async () => {
 		const clientId = Date.now(); // Get a unique ID for each code execution
 		const code = context === "current" ? files[fileName].content : [files[fileName].content, ...Object.entries(files)
 		.filter(([key]) => key !== fileName)
 		.map(([, file]) => file.content)]
-		.join('\n$');
+		.join('\n');
 		
 		// Close existing SSE connections
 		if (eventSourceRef.current) {

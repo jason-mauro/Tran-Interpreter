@@ -9,6 +9,7 @@
     }
   ],
   "compilerOptions": {
+    "types": ["@types/monaco-editor"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]

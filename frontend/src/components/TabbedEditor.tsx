@@ -6,6 +6,8 @@ import KeybindPicker from './KeybindPicker';
 import { MousePointer } from 'lucide-react';
 import * as monacoEditor from 'monaco-editor';
 import { File } from '../types/types';
+import { Button } from '@/components/ui/button';
+import RunContext from './RunContext';
 
 interface TabbedEditorProps {
     handleKeybindChange: (keybinds: string) => void
@@ -17,6 +19,8 @@ interface TabbedEditorProps {
     setFiles: React.Dispatch<React.SetStateAction<Record<string, File>>>
     files: Record<string, File>;
     fileName: string;
+    setOutput: React.Dispatch<React.SetStateAction<string[]>>;
+    eventSourceRef: React.MutableRefObject<EventSource | null>;
 }
 
 const EmptyState = () => {
@@ -46,10 +50,69 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
     setFileName, 
     setFiles, 
     files, 
-    fileName
+    fileName,
+    setOutput,
+    eventSourceRef
 }) => {
+
+	const [context, setContext] = React.useState<string>("current");
+
+	const executeCode = async () => {
+		const clientId = Date.now(); // Get a unique ID for each code execution
+		const code = context === "current" ? files[fileName].content : [files[fileName].content, ...Object.entries(files)
+		.filter(([key]) => key !== fileName)
+		.map(([, file]) => file.content)]
+		.join('\n$');
+		
+		// Close existing SSE connections
+		if (eventSourceRef.current) {
+		  eventSourceRef.current.close();
+		}
+	  
+		// Set up the SSE connection for the console
+		eventSourceRef.current = new EventSource(`http://localhost:8080/api/interpreter/console/${clientId}`);
+	  
+		// Handle SSE events
+		eventSourceRef.current.addEventListener('CONSOLE_OUTPUT', (event) => {
+		  setOutput(prev => [...prev, event.data]); // Save console output when it is sent
+		});
+	
+	  
+	  
+		eventSourceRef.current.onerror = (error) => {
+		  console.error('SSE Error:', error);
+		  eventSourceRef.current?.close();
+		};
+	  
+		// Wait for SSE connection to be established before executing
+		eventSourceRef.current.onopen = async () => {
+		  console.log("SSE connection established");
+		  console.log(code);
+	
+		eventSourceRef.current?.addEventListener('EXECUTION_COMPLETED', () => {
+		  eventSourceRef.current?.close();
+		});
+	
+		  // Execute the code
+		  try {
+			const response = await fetch(`http://localhost:8080/api/interpreter/execute/${clientId}`, {
+			  method: 'POST',
+			  headers: {
+				'Content-Type': 'application/json',
+			  },
+			  body: JSON.stringify({ code: code }),
+			});
+	  
+			if (!response.ok) {
+			  throw new Error('Failed to execute code');
+			}
+		  } catch (error) {
+			console.error('Error executing code:', error);
+		  }
+		};
+	};
     return (
-        <div className="flex flex-col w-[60%] bg-accent p-4 rounded-lg border border-input shadow-sm">
+        <div className="flex flex-col w-[70%] bg-accent p-4 rounded-lg border border-input shadow-sm">
             <TabBar 
                 files={files}
                 setFileName={setFileName}
@@ -70,9 +133,11 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
                     files={files}
                 />
             )}
-            <div className="flex flex-row py-1">
+            <div className="flex flex-row items-end py-1 overflow-auto">
                 <ThemePicker onThemeChange={handleThemeChange} />
                 <KeybindPicker onKeybindChange={handleKeybindChange} />
+				<RunContext setContext={setContext}/>
+				<Button onClick={executeCode} className = "ml-[5px]">Run</Button>
             </div>        
         </div>
     );

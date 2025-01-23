@@ -2,6 +2,7 @@ import Editor, { loader } from '@monaco-editor/react';
 import React, { useEffect } from 'react';
 import * as monacoEditor from 'monaco-editor';
 import { File } from '../types/types';
+import { tran } from '../TranLanguageConfig'
 
 interface EditorProps {
     fileName: string;
@@ -16,30 +17,35 @@ interface EditorProps {
 const CodeEditor: React.FC<EditorProps> = ({fileName, value, theme, editorRef, setFiles , files}) => {
 
   useEffect(() => {
+    monacoEditor.languages.register({ id: 'tran' });
+    monacoEditor.languages.setMonarchTokensProvider('tran', tran as monacoEditor.languages.IMonarchLanguage);
+  }, []);
+
+  
+  useEffect(() => {
     const loadTheme = async () => {
       try {
-        // Load the monaco editor
+        // Load monaco editor and register custom language
         const monaco = await loader.init();
-
-        // Encode the theme name for JSON file
-        const encodedThemeName = encodeURIComponent(theme);
-
+        monaco.languages.register({ id: 'tran' });
+        monaco.languages.setMonarchTokensProvider('tran', tran as monacoEditor.languages.IMonarchLanguage);
+  
         // Fetch the theme JSON
-        const response = await fetch(`/themes/${encodedThemeName}.json`);
+        const response = await fetch(`/themes/${theme}.json`);
         if (!response.ok) {
           throw new Error(`Failed to fetch theme: ${response.statusText}`);
         }
-
+  
         const themeData = await response.json();
-
-        // Define and set the custom theme
-        monaco.editor.defineTheme('x', themeData);
-        monaco.editor.setTheme('x');
+  
+        // Define and set the theme without modifying token colors
+        monaco.editor.defineTheme('customTheme', themeData);
+        monaco.editor.setTheme('customTheme');
       } catch (error) {
         console.error("Failed to load theme:", error);
       }
     };
-
+  
     loadTheme();
   }, [theme, editorRef]);
 
@@ -67,12 +73,14 @@ const CodeEditor: React.FC<EditorProps> = ({fileName, value, theme, editorRef, s
       }
     }));
   };
+
+  
     
     return (
         <Editor
-            height={"650px"}
+            height={"450px"}
             width={"100%"}
-            language="python"
+            language="tran"
             theme={theme}
             path={files[fileName].id.toString()}
             defaultValue={value}

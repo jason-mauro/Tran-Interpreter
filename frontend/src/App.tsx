@@ -1,7 +1,7 @@
 "use client";
 
 import TabbedEditor from './components/TabbedEditor';
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Toaster } from '@/components/ui/toaster'
 import * as monacoEditor from 'monaco-editor';
 import { File } from './types/types';
@@ -14,7 +14,16 @@ function App() {
   const [keybinds, setKeybinds] = useState<string>("Default");
   const editorRef = useRef<monacoEditor.editor.IStandaloneCodeEditor | null>(null);
   const [files, setFiles] = useState<Record<string, File>>({
-    "demo.tran": {id: 0, name: "demo.tran", content: `class demo\n\tshared start()\n\t\tconsole.write(\"Hello World\")`, viewState: null},
+    "demo.tran": {id: 0, name: "demo.tran", 
+      content: `class demo
+	shared fib(number n) : number x
+		if n <= 1
+			x = n
+		else
+			x = fib(n-1) + fib(n-2)
+
+	shared start()
+		console.write(fib(20))`, viewState: null},
     "demo2.tran": {id: 1, name: "demo2.tran", content: `class demo2\n\tshared start()\n\t\tconsole.write(\"Hello World\")`, viewState: null}
   })
   const [output, setOutput] = useState<string[]>([]);
@@ -28,7 +37,6 @@ function App() {
     editorRef?.current?.focus();
   }, [fileName, file]);
 
-
   const handleKeybindChange = (keybinds : string ) => {
     setKeybinds(keybinds);
   }
@@ -36,59 +44,7 @@ function App() {
     setEditorTheme(newTheme);
   }
 
-  const executeCode = async () => {
-	const clientId = Date.now(); // Get a unique ID for each code execution
-	const code = files[fileName].content;
-	
-	// Close existing SSE connections
-	if (eventSourceRef.current) {
-	  eventSourceRef.current.close();
-	}
   
-	// Set up the SSE connection for the console
-	eventSourceRef.current = new EventSource(`http://localhost:8080/api/interpreter/console/${clientId}`);
-  
-	// Handle SSE events
-	eventSourceRef.current.addEventListener('CONSOLE_OUTPUT', (event) => {
-	  setOutput(prev => [...prev, event.data]); // Save console output when it is sent
-	});
-
-  
-  
-	eventSourceRef.current.onerror = (error) => {
-	  console.error('SSE Error:', error);
-	  eventSourceRef.current?.close();
-	};
-  
-	// Wait for SSE connection to be established before executing
-	eventSourceRef.current.onopen = async () => {
-	  console.log("SSE connection established");
-	  console.log(code);
-
-    eventSourceRef.current?.addEventListener('EXECUTION_COMPLETED', (event) => {
-      eventSourceRef.current?.close();
-    });
-
-	  // Execute the code
-	  try {
-		const response = await fetch(`http://localhost:8080/api/interpreter/execute/${clientId}`, {
-		  method: 'POST',
-		  headers: {
-			'Content-Type': 'application/json',
-		  },
-		  body: JSON.stringify({ code: code }),
-		});
-  
-		if (!response.ok) {
-		  throw new Error('Failed to execute code');
-		}
-	  } catch (error) {
-		console.error('Error executing code:', error);
-	  }
-	};
-};
-
-
   useEffect(() => {
 	console.log(output);
   }, [output]);
@@ -100,7 +56,7 @@ function App() {
         <h1 className="text-primary-foreground text-2xl font-sans">Tran Interpreter</h1>
         <ModeToggle />
       </div>
-         <div className="flex justify-center items-center bg-background">
+         <div className="flex flex-col  justify-center items-center bg-background mt-2">
           
           <TabbedEditor
             handleKeybindChange={handleKeybindChange} 
@@ -112,9 +68,25 @@ function App() {
             setFiles={setFiles}
             files={files}
             fileName={fileName}
+            eventSourceRef={eventSourceRef}
+            setOutput={setOutput}
             />
-			<Button onClick={executeCode}>Execute</Button>
-          
+
+          <div className="flex flex-col w-[70%] bg-accent p-4 rounded-lg border border-input shadow-sm mt-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg text-accent-foreground">Console Output</h3>
+              <Button onClick={() => setOutput([])} variant="outline">Clear</Button>
+            </div>
+            <div className="h-[200px] overflow-y-auto mt-2 border border-input rounded-lg bg-background shadow-sm ">
+              {output.map((line, index) => (
+                <p key={index} className={`text-sm pl-2 ${
+                  line?.includes("SyntaxErrorException") ? "text-red-500" : ""
+                }`}>{line}</p>
+
+              ))}
+            </div>
+          </div>
+		
         </div>
       </div>
       <Toaster />

@@ -12,7 +12,7 @@ import java.util.List;
 
 public class ConsoleWrite extends BuiltInMethodDeclarationNode {
     public SseEmitter sseEmitter;
-    List<String> console = new LinkedList<>();
+    public List<String> console = new LinkedList<>();
 
     @Override
     public List<InterpreterDataType> Execute(List<InterpreterDataType> params) {

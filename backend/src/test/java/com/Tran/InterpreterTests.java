@@ -138,7 +138,7 @@ public class InterpreterTests {
             if (c.name.equals("console")) {
                 for (var m : c.methods)  {
                     if (m.name.equals("write")) {
-                        return List.of();
+                        return ((ConsoleWrite)m).console;
                     }
                 }
             }

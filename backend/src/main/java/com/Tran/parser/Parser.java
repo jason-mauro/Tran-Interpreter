@@ -84,6 +84,10 @@ public class Parser {
     private Optional<List<MemberNode>> Member() throws SyntaxErrorException {
         List<MemberNode> memberNodes = new ArrayList<>();
         MemberNode memberNode = new MemberNode();
+        if (tokenManager.peek(0).isPresent() && tokenManager.peek(1).isPresent() && tokenManager.peek(2).isPresent() && tokenManager.peek(0).get().getType().equals(Token.TokenTypes.SHARED) && (!tokenManager.peek(1).get().getType().equals(Token.TokenTypes.WORD) || !tokenManager.peek(2).get().getType().equals(Token.TokenTypes.WORD))) return Optional.empty();
+        if (tokenManager.matchAndRemove(Token.TokenTypes.SHARED).isPresent()) {
+            memberNode.isShared = true;
+        }
         var member = VariableDeclaration();
         if (member.isEmpty()) return Optional.empty(); // No variable Declaration
         member.ifPresent(variableDeclarationNode -> memberNode.declaration = variableDeclarationNode);
@@ -91,9 +95,10 @@ public class Parser {
             // Add the processed member node and them add the rest of the declarations
             memberNodes.add(memberNode);
             while(tokenManager.matchAndRemove(Token.TokenTypes.COMMA).isPresent()) {
+                boolean shared = memberNode.isShared;
                 Optional<Token> name = tokenManager.matchAndRemove(Token.TokenTypes.WORD);
                 if (name.isEmpty()) throw new SyntaxErrorException("Identifier Expected", tokenManager.getCurrentLine(), tokenManager.getCurrentColumnNumber());
-                name.ifPresent(token -> memberNodes.add(new MemberNode(){{this.declaration = new VariableDeclarationNode(){{this.type = member.get().type; this.name = token.getValue();}};}}));
+                name.ifPresent(token -> memberNodes.add(new MemberNode(){{this.isShared = shared; this.declaration = new VariableDeclarationNode(){{this.type = member.get().type; this.name = token.getValue();}};}}));
             }
             if (tokenManager.peek(0).isPresent() && !tokenManager.peek(0).get().getType().equals(Token.TokenTypes.DEDENT)) RequireNewLine();
             return Optional.of(memberNodes);
@@ -540,7 +545,8 @@ public class Parser {
         }
     }
 
-    // FIX THIS
+
+
     private Optional<ExpressionNode> ParseChainedMethodCallExpression(ExpressionNode mce) throws SyntaxErrorException {
         if (tokenManager.matchAndRemove(Token.TokenTypes.DOT).isEmpty()) return Optional.of(mce);
         var nameToken = tokenManager.matchAndRemove(Token.TokenTypes.WORD);

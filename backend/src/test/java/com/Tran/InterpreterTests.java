@@ -11,6 +11,13 @@ import com.Tran.lexer.*;
 import java.util.List;
 
 public class InterpreterTests {
+    public static ConsoleWrite consoleWrite = new ConsoleWrite() {{
+        isVariadic = true;
+        isShared = true;
+        name = "print";
+
+    }};
+
     @Test
     public void SimpleAdd() {
         String program = """
@@ -77,15 +84,15 @@ public class InterpreterTests {
                 "        boolean keepGoing\n" +
                 "        number n\n" +
                 "        n = 0\n" +
-                "        keepGoing = true\n" +
+                "        keepGoing = boolean.true\n" +
                 "        loop keepGoing\n" +
                 "            if n >= 15\n" +
-                "                keepGoing = false\n" +
+                "                keepGoing = boolean.false\n" +
                 "            else\n" +
                 "                n = n + 1\n" +
-                "                console.write(n)\n";
+                "                console.print(n)\n";
         var tranNode = run(program);
-        var c = getConsole(tranNode);
+        var c = consoleWrite.console;
         Assertions.assertEquals(15,c.size());
         Assertions.assertEquals("1.0",c.getFirst());
         Assertions.assertEquals("15.0",c.getLast());
@@ -134,15 +141,7 @@ public class InterpreterTests {
     }
 
     private static List<String> getConsole(TranNode tn) {
-        for (var c : tn.Classes)
-            if (c.name.equals("console")) {
-                for (var m : c.methods)  {
-                    if (m.name.equals("write")) {
-                        return ((ConsoleWrite)m).console;
-                    }
-                }
-            }
-        throw new RuntimeException("Unable to find console");
+        return null;
     }
 
     private static TranNode run(String program) {
@@ -152,8 +151,7 @@ public class InterpreterTests {
             var tran = new TranNode();
             var p = new Parser(tran,tokens);
             p.Tran();
-            System.out.println(tran.toString());
-            var i = new Interpreter(tran, new ConsoleWrite(){{this.isShared = true; this.isVariadic = true; this.name = "write";}});
+            var i = new Interpreter(tran, consoleWrite);
             i.start();
             return tran;
         } catch (Exception e) {

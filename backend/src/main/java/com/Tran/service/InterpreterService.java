@@ -37,7 +37,7 @@ public class InterpreterService {
         ConsoleWrite consoleWrite = new ConsoleWrite() {{
             isVariadic = true;
             isShared = true;
-            name = "write";
+            name = "print";
             sseEmitter = emitter;
         }};
         consoleWriters.put(clientId, consoleWrite);

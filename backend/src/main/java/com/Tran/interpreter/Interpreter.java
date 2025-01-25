@@ -11,6 +11,7 @@ public class Interpreter {
 
     private TranNode top;
     private HashMap<String, MethodDeclarationNode> BuiltInMethods = new HashMap<>();
+    private HashMap<String, HashMap<String, InterpreterDataType>> staticMemberMap = new HashMap<>(); // Class -> members -> data
 
     /** Constructor - get the interpreter ready to run. Set members from parameters and "prepare" the class.
      *
@@ -29,7 +30,144 @@ public class Interpreter {
         // Iterator interface
         top.Interfaces.add(new InterfaceNode(){{this.name = "iterator"; this.methods.add(new MethodHeaderNode(){{this.name = "getNext"; this.returns.add(new VariableDeclarationNode(){{this.name = "b"; this.type = "boolean";}}); this.returns.add(new VariableDeclarationNode(){{this.name = "i"; this.type = "number";}});}});}});
         BuiltInMethods.put("clone", new MethodDeclarationNode(){{this.name = "clone";}});
-        // Create a class for number iterator objects that implement the iterator interface
+        // Add the built-in NumberIterator Class
+        top.Classes.add(getNumberIterator());
+        // Add the boolean built-in class
+        top.Classes.add(Boolean());
+    }
+
+    private ClassNode Boolean(){
+        ClassNode bool = new ClassNode();
+        bool.name = "boolean";
+        // True and False
+        MemberNode trueNode = new MemberNode(){{this.isShared = true; this.declaration = new VariableDeclarationNode(){{this.type = "boolean"; this.name = "true";}};}};
+        trueNode.accessor = Optional.of(new ArrayList<>());
+        trueNode.accessor.get().add(new AssignmentNode(){{this.target = new VariableReferenceNode(){{this.name = "value";}}; this.expression = new BooleanLiteralNode(true);}});
+        MemberNode falseNode = new MemberNode(){{this.isShared = true; this.declaration = new VariableDeclarationNode(){{this.type = "boolean"; this.name = "false";}};}};
+        falseNode.accessor = Optional.of(new ArrayList<>());
+        falseNode.accessor.get().add(new AssignmentNode(){{this.target = new VariableReferenceNode(){{this.name = "value";}}; this.expression = new BooleanLiteralNode(false);}});
+        bool.members.add(trueNode);
+        bool.members.add(falseNode);
+        // NOT
+        MethodDeclarationNode notMethod = new MethodDeclarationNode(){{this.name = "not"; isShared = true;}};
+        notMethod.returns.add(new VariableDeclarationNode(){{this.name = "result"; this.type = "boolean";}});
+        notMethod.parameters.add(new VariableDeclarationNode(){{this.name = "value"; this.type = "boolean";}});
+        IfNode notIf = new IfNode(){{
+            this.statements = new ArrayList<>();
+            this.condition = new CompareNode(){{
+                this.left = new VariableReferenceNode(){{
+                    this.name = "value";}};
+                    this.op = CompareOperations.eq;
+                    this.right = new BooleanLiteralNode(true);
+            }};
+        }};
+        notIf.statements.add(new AssignmentNode(){{this.target = new VariableReferenceNode(){{this.name = "result";}}; this.expression = new BooleanLiteralNode(false);}});
+        notIf.elseStatement = Optional.of(new ElseNode(){{
+            this.statements = new ArrayList<>();
+            this.statements.add(new AssignmentNode(){{
+                this.target = new VariableReferenceNode(){{
+                    this.name = "result";
+                }};
+                this.expression = new BooleanLiteralNode(true);
+            }});
+        }});
+        notMethod.statements.add(notIf);
+        // AND
+        MethodDeclarationNode andMethod = new MethodDeclarationNode(){{this.name = "and"; isShared = true;}};
+        andMethod.returns.add(new VariableDeclarationNode(){{this.name = "result"; this.type = "boolean";}});
+        andMethod.parameters.add(new VariableDeclarationNode(){{this.name = "a"; this.type = "boolean";}});
+        andMethod.parameters.add(new VariableDeclarationNode(){{this.name = "b"; this.type = "boolean";}});
+        IfNode andIf = new IfNode(){{
+            this.statements = new ArrayList<>();
+            this.condition = new CompareNode(){{
+                this.left = new VariableReferenceNode(){{
+                    this.name = "a";}};
+                    this.op = CompareOperations.eq;
+                    this.right = new BooleanLiteralNode(false);
+                }};
+        }};
+        andIf.statements.add(new AssignmentNode(){{this.target = new VariableReferenceNode(){{this.name = "result";}}; this.expression = new BooleanLiteralNode(false);}});
+        andIf.elseStatement = Optional.of(new ElseNode() {{
+            this.statements = new ArrayList<>();
+            this.statements.add(new IfNode() {{
+                this.statements = new ArrayList<>();
+                this.condition = new CompareNode() {{
+                    this.left = new VariableReferenceNode() {{
+                        this.name = "b";
+                    }};
+                    this.op = CompareOperations.eq;
+                    this.right = new BooleanLiteralNode(false);
+                }};
+                this.statements.add(new AssignmentNode() {{
+                    this.target = new VariableReferenceNode() {{
+                        this.name = "result";
+                    }};
+                    this.expression = new BooleanLiteralNode(false);
+                }});
+                this.elseStatement = Optional.of(new ElseNode() {{
+                    this.statements = new ArrayList<>();
+                    this.statements.add(new AssignmentNode() {{
+                        this.target = new VariableReferenceNode() {{
+                            this.name = "result";
+                        }};
+                        this.expression = new BooleanLiteralNode(true);
+                    }});
+                }});
+            }});
+        }});
+        andMethod.statements.add(andIf);
+
+        // OR
+        MethodDeclarationNode orMethod = new MethodDeclarationNode(){{this.name = "or"; isShared = true;}};
+        orMethod.returns.add(new VariableDeclarationNode(){{this.name = "result"; this.type = "boolean";}});
+        orMethod.parameters.add(new VariableDeclarationNode(){{this.name = "a"; this.type = "boolean";}});
+        orMethod.parameters.add(new VariableDeclarationNode(){{this.name = "b"; this.type = "boolean";}});
+        IfNode orIf = new IfNode(){{
+            this.statements = new ArrayList<>();
+            this.condition = new CompareNode(){{
+                this.left = new VariableReferenceNode(){{
+                    this.name = "a";}};
+                this.op = CompareOperations.eq;
+                this.right = new BooleanLiteralNode(true);
+            }};
+        }};
+        orIf.statements.add(new AssignmentNode(){{this.target = new VariableReferenceNode(){{this.name = "result";}}; this.expression = new BooleanLiteralNode(true);}});
+        orIf.elseStatement = Optional.of(new ElseNode() {{
+            this.statements = new ArrayList<>();
+            this.statements.add(new IfNode() {{
+                this.statements = new ArrayList<>();
+                this.condition = new CompareNode() {{
+                    this.left = new VariableReferenceNode() {{
+                        this.name = "b";
+                    }};
+                    this.op = CompareOperations.eq;
+                    this.right = new BooleanLiteralNode(true);
+                }};
+                this.statements.add(new AssignmentNode() {{
+                    this.target = new VariableReferenceNode() {{
+                        this.name = "result";
+                    }};
+                    this.expression = new BooleanLiteralNode(true);
+                }});
+                this.elseStatement = Optional.of(new ElseNode() {{
+                    this.statements = new ArrayList<>();
+                    this.statements.add(new AssignmentNode() {{
+                        this.target = new VariableReferenceNode() {{
+                            this.name = "result";
+                        }};
+                        this.expression = new BooleanLiteralNode(false);
+                    }});
+                }});
+            }});
+        }});
+        orMethod.statements.add(orIf);
+        bool.methods.add(orMethod);
+        bool.methods.add(notMethod);
+        bool.methods.add(andMethod);
+        return bool;
+
+    }
+    private ClassNode getNumberIterator(){
         ClassNode NumberIterator = new ClassNode();
         NumberIterator.name = "NumberIterator";
         NumberIterator.interfaces.add("iterator");
@@ -45,7 +183,7 @@ public class Interpreter {
         getNext.statements.add(new AssignmentNode(){{this.target = new VariableReferenceNode(){{this.name = "currentValue";}}; this.expression = new MathOpNode(){{this.left = new VariableReferenceNode(){{this.name = "currentValue";}}; this.right = new NumericLiteralNode(){{this.value = 1;}}; this.op = MathOperations.add;}};}});
         getNext.statements.add(new AssignmentNode(){{this.target = new VariableReferenceNode(){{this.name ="i";}}; this.expression = new VariableReferenceNode(){{this.name ="currentValue";}};}});
         NumberIterator.methods.add(getNext);
-        top.Classes.add(NumberIterator);
+        return NumberIterator;
     }
 
 
@@ -62,26 +200,34 @@ public class Interpreter {
         }
         for (var c : top.Classes){
             for (var m : c.members){
-                if (c.memberMap.containsKey(m.declaration.name)){
+                if (c.memberMap.containsKey(m.declaration.name) || staticMemberMap.containsKey(c) && staticMemberMap.get(c).containsKey(m.declaration.name)){
                     throw new Exception(String.format("Variable '%s' is already defined in scope", m.declaration.name));
                 } else {
+                    if (m.isShared){
+                        staticMemberMap.put(c.name, new HashMap<>(){{put(m.declaration.name, instantiate(m.declaration.type));}});
+                        staticMemberMap.get(c.name).get(m.declaration.name).Initialize();
+                    }
                     c.memberMap.put(m.declaration.name, instantiate(m.declaration.type));
                     c.memberMap.get(m.declaration.name).Initialize();
                 }
                 if (m.accessor.isPresent()){
                     var methodNode = new MethodDeclarationNode();
                     methodNode.name = m.declaration.name;
+                    if (m.isShared){
+                        methodNode.isShared = true;
+                    }
                     methodNode.returns.add(new VariableDeclarationNode(){{this.name = "value"; this.type = m.declaration.type;}});
                     methodNode.statements = m.accessor.get();
-                    methodNode.localMap.put("value", instantiate(m.declaration.type));
                     c.accessors.put(m.declaration.name, methodNode);
                 }
                 if (m.mutator.isPresent()){
                     var methodNode = new MethodDeclarationNode();
                     methodNode.name = m.declaration.name;
+                    if (m.isShared){
+                        methodNode.isShared = true;
+                    }
                     methodNode.parameters.add(new VariableDeclarationNode(){{this.name = "value"; this.type = m.declaration.type;}});
                     methodNode.statements = m.mutator.get();
-                    methodNode.localMap.put("value", instantiate(m.declaration.type));
                     c.mutators.put(m.declaration.name, methodNode);
                 }
             }
@@ -138,6 +284,7 @@ public class Interpreter {
          //Search through classes in top and find a method called start which isShared.
          //Create the methods to be Interpreter Data Types
         for (var c : top.Classes){
+            System.out.println(c);
             for (var m : c.methods){
                 if (m.isShared && m.name.equals("start") && m.parameters.isEmpty()){
                     interpretMethodCall(Optional.of(new ObjectIDT(c){{this.isSharedMethodCall = true;}}), m, new ArrayList<InterpreterDataType>());
@@ -685,8 +832,9 @@ public class Interpreter {
             ObjectIDT newObject = new ObjectIDT(classNode.get());
             newObject.members = new HashMap<>();
             for (var m : classNode.get().members){
-                newObject.members.put(m.declaration.name, instantiate(m.declaration.type));
-
+                if (!m.isShared){
+                    newObject.members.put(m.declaration.name, instantiate(m.declaration.type));
+                }
             }
             findConstructorAndRunIt(Optional.of(newObject), locals, (NewNode) expression, newObject);
             return newObject;
@@ -865,16 +1013,37 @@ public class Interpreter {
             ObjectIDT objectID = object.get();
             if (objectID.members.containsKey(name.name)){
                 return objectID.members.get(name.name);
+            } else if (staticMemberMap.containsKey(objectID.astNode.name) && staticMemberMap.get(objectID.astNode.name).containsKey(name.name)){
+                return staticMemberMap.get(objectID.astNode.name).get(name.name);
             }
+        }
+
+        var classNode = getClassByName(name.name);
+        if (classNode.isPresent()){
+            return new ObjectIDT(classNode.get()){{this.isSharedMethodCall = true;}};
         }
         throw new RuntimeException("Unable to find variable " + name);
     }
 
-
+// TODO: TEST IF THE MEMBERS FROM CLASSES WORK ON SHARED MEMBERS AND ADD THIS TO THE SET MEMBER FOR MUTATORS ON SHARED VARIABELS
     private InterpreterDataType findMember(MemberExpressionNode member, HashMap<String,InterpreterDataType> locals, Optional<ObjectIDT> object) {
         InterpreterDataType callerObject = evaluate(locals, object, member.object);
 
+        // The caller is a variable reference node and I need to check if the node is a class which can be used with findClassByName
+
+        //
         if (!(callerObject instanceof ReferenceIDT)){
+            if (callerObject instanceof ObjectIDT){
+                String memberName = ((VariableReferenceNode) member.property).name;
+                if (!((ObjectIDT) callerObject).astNode.accessors.containsKey(memberName)){
+                    System.out.println(callerObject);
+                    throw new RuntimeException("Unable to find accessor: " + memberName);
+                } else if (!((ObjectIDT) callerObject).astNode.accessors.get(memberName).isShared) {
+                    throw new RuntimeException("Trying to access member using class name, but the member is not shared");
+                }
+                return interpretMethodCall(Optional.of((ObjectIDT) callerObject), ((ObjectIDT) callerObject).astNode.accessors.get(memberName), List.of()).getFirst();
+
+            }
             throw new RuntimeException("Trying to access a member on an IDT that is not a reference (Not an object)");
         }
         ObjectIDT actualObject = ((ReferenceIDT) callerObject).refersTo.get();
@@ -891,6 +1060,21 @@ public class Interpreter {
         InterpreterDataType callerObject = evaluate(locals, object, member.object);
 
         if (!(callerObject instanceof ReferenceIDT)){
+            if (!(callerObject instanceof ReferenceIDT)){
+                if (callerObject instanceof ObjectIDT){
+                    String memberName = ((VariableReferenceNode) member.property).name;
+                    if (!((ObjectIDT) callerObject).astNode.mutators.containsKey(memberName)){
+                        throw new RuntimeException("Unable to find mutator: " + memberName);
+                    } else if (!((ObjectIDT) callerObject).astNode.mutators.get(memberName).isShared) {
+                        throw new RuntimeException("Trying to access member using class name, but the member is not shared");
+                    }
+                    List<InterpreterDataType> parameter = new LinkedList<>();
+                    parameter.add(value);
+                    interpretMethodCall(Optional.of((ObjectIDT) callerObject), ((ObjectIDT) callerObject).astNode.mutators.get(memberName), parameter);
+
+                }
+                throw new RuntimeException("Trying to access a member on an IDT that is not a reference (Not an object)");
+            }
             throw new RuntimeException("Trying to access a member on an IDT that is not a reference (Not an object)");
         }
         ObjectIDT actualObject = ((ReferenceIDT) callerObject).refersTo.get();

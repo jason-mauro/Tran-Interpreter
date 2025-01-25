@@ -7,8 +7,6 @@ import java.util.HashMap;
 
 public class ObjectIDT implements InterpreterDataType {
     public HashMap<String,InterpreterDataType> members = new HashMap<>();
-    public HashMap<String, MethodDeclarationNode> accessors = new HashMap<>(); // Name to accessors statements
-    public HashMap<String, MethodDeclarationNode> mutators = new HashMap<>(); // Name to accessors statements
     public final ClassNode astNode;
     public boolean isInitialized = false;
     public boolean isSharedMethodCall = false;

@@ -18,8 +18,9 @@ public class Lexer {
         put("loop", Token.TokenTypes.LOOP);
         put("if", Token.TokenTypes.IF);
         put("else", Token.TokenTypes.ELSE);
-        put("true", Token.TokenTypes.TRUE);
-        put("false", Token.TokenTypes.FALSE);
+        // Now used with boolean.true or boolean.false
+//        put("true", Token.TokenTypes.TRUE);
+//        put("false", Token.TokenTypes.FALSE);
         put("new", Token.TokenTypes.NEW);
         put("private", Token.TokenTypes.PRIVATE);
         put("shared", Token.TokenTypes.SHARED);
@@ -44,9 +45,10 @@ public class Lexer {
         put(">", Token.TokenTypes.GREATERTHAN);
         put("<=", Token.TokenTypes.LESSTHANEQUAL);
         put(">=", Token.TokenTypes.GREATERTHANEQUAL);
-        put("and", Token.TokenTypes.AND);
-        put("or", Token.TokenTypes.OR);
-        put("not", Token.TokenTypes.NOT);
+        // Booleans are not with built-in objects
+//        put("and", Token.TokenTypes.AND);
+//        put("or", Token.TokenTypes.OR);
+//        put("not", Token.TokenTypes.NOT);
     }};
 
     public Lexer(String input) {

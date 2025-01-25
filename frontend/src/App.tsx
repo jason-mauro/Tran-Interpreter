@@ -1,7 +1,7 @@
 "use client";
 
 import TabbedEditor from './components/TabbedEditor';
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Toaster } from '@/components/ui/toaster'
 import * as monacoEditor from 'monaco-editor';
 import { File } from './types/types';

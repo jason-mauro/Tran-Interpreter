@@ -2,7 +2,6 @@ import React from 'react';
 import CodeEditor from './CodeEditor';
 import TabBar from './TabBar';
 import ThemePicker from './ThemePicker';
-import KeybindPicker from './KeybindPicker';
 import { MousePointer } from 'lucide-react';
 import * as monacoEditor from 'monaco-editor';
 import { File } from '../types/types';
@@ -42,7 +41,6 @@ const EmptyState = () => {
 };
 
 const TabbedEditor: React.FC<TabbedEditorProps> = ({ 
-    handleKeybindChange, 
     editorRef, 
     handleThemeChange, 
     theme, 
@@ -136,7 +134,7 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
             )}
             <div className="flex flex-row items-end py-1 overflow-auto">
                 <ThemePicker onThemeChange={handleThemeChange} />
-                <KeybindPicker onKeybindChange={handleKeybindChange} />
+                
 				<RunContext setContext={setContext}/>
 				<Button onClick={executeCode} className = "ml-[5px]">Run</Button>
             </div>        

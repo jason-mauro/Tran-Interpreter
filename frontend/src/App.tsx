@@ -14,8 +14,9 @@ function App() {
   const [keybinds, setKeybinds] = useState<string>("Default");
   const editorRef = useRef<monacoEditor.editor.IStandaloneCodeEditor | null>(null);
   const [files, setFiles] = useState<Record<string, File>>({
-    "demo.tran": {id: 0, name: "demo.tran", 
-      content: `class demo
+    "demo.tran": {id: 0, name: "demo.tran", content: `class demo\n\tshared start()\n\t\tconsole.print(\"Hello World\")`, viewState: null},
+    "demo2.tran": {id: 1, name: "demo2.tran", 
+      content: `class demo2
 	shared fib(number n) : number x
 		if n <= 1
 			x = n
@@ -23,8 +24,7 @@ function App() {
 			x = fib(n-1) + fib(n-2)
 
 	shared start()
-		console.write(fib(20))`, viewState: null},
-    "demo2.tran": {id: 1, name: "demo2.tran", content: `class demo2\n\tshared start()\n\t\tconsole.write(\"Hello World\")`, viewState: null}
+		console.print(fib(20))`, viewState: null}
   })
   const [output, setOutput] = useState<string[]>([]);
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -32,6 +32,15 @@ function App() {
   const [fileName, setFileName] = useState<string>("demo.tran");
 
   const file = files[fileName];
+
+  const outputContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (outputContainerRef.current) {
+      outputContainerRef.current.scrollTop = outputContainerRef.current.scrollHeight;
+    }
+  }, [output]);
+
 
   useEffect(() => {
     editorRef?.current?.focus();
@@ -44,10 +53,6 @@ function App() {
     setEditorTheme(newTheme);
   }
 
-  
-  useEffect(() => {
-	console.log(output);
-  }, [output]);
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
@@ -72,17 +77,20 @@ function App() {
             setOutput={setOutput}
             />
 
-          <div className="flex flex-col w-[70%] bg-accent p-4 rounded-lg border border-input shadow-sm mt-2">
+        <div className="flex flex-col w-[70%] bg-accent p-4 rounded-lg border border-input shadow-sm mt-2">
             <div className="flex items-center justify-between">
               <h3 className="text-lg text-accent-foreground">Console Output</h3>
               <Button onClick={() => setOutput([])} variant="outline">Clear</Button>
             </div>
-            <div className="h-[200px] overflow-y-auto mt-2 border border-input rounded-lg bg-background shadow-sm ">
+            <div 
+              ref={outputContainerRef} 
+              className="h-[200px] overflow-y-auto mt-2 border border-input rounded-lg bg-background shadow-sm "
+            >
               {output.map((line, index) => (
                 <p key={index} className={`text-sm pl-2 ${
-                  line?.includes("SyntaxErrorException") ? "text-red-500" : ""
-                }`}>{line}</p>
+                  line?.includes("SyntaxErrorException") ? "text-destructive" : line?.includes("TranRuntimeException") ? "text-destructive" : ""
 
+                }`}>{line}</p>
               ))}
             </div>
           </div>

@@ -52,64 +52,88 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
     setOutput,
     eventSourceRef
 }) => {
-
+  const [currentId, setCurrentId] = React.useState<number>(0);
 	const [context, setContext] = React.useState<string>("current");
+  const [running, setRunning] = React.useState<boolean>(false);
 
 	// TODO: Add delimiters to files to track errors for each file $name$ and create new token for them in the lexer for better errors
 	const executeCode = async () => {
-		const clientId = Date.now(); // Get a unique ID for each code execution
-		const code = context === "current" ? files[fileName].content : [files[fileName].content, ...Object.entries(files)
-		.filter(([key]) => key !== fileName)
-		.map(([, file]) => file.content)]
-		.join('\n');
-		
-		// Close existing SSE connections
-		if (eventSourceRef.current) {
-		  eventSourceRef.current.close();
-		}
-	  
-		// Set up the SSE connection for the console
-		eventSourceRef.current = new EventSource(`http://localhost:8080/api/interpreter/console/${clientId}`);
-	  
-		// Handle SSE events
-		eventSourceRef.current.addEventListener('CONSOLE_OUTPUT', (event) => {
-		  setOutput(prev => [...prev, event.data]); // Save console output when it is sent
-		});
-	
-	  
-	  
-		eventSourceRef.current.onerror = (error) => {
-		  console.error('SSE Error:', error);
-		  eventSourceRef.current?.close();
-		};
-	  
-		// Wait for SSE connection to be established before executing
-		eventSourceRef.current.onopen = async () => {
-		  console.log("SSE connection established");
-		  console.log(code);
-	
-		eventSourceRef.current?.addEventListener('EXECUTION_COMPLETED', () => {
-		  eventSourceRef.current?.close();
-		});
-	
-		  // Execute the code
-		  try {
-			const response = await fetch(`http://localhost:8080/api/interpreter/execute/${clientId}`, {
-			  method: 'POST',
-			  headers: {
-				'Content-Type': 'application/json',
-			  },
-			  body: JSON.stringify({ code: code }),
-			});
-	  
-			if (!response.ok) {
-			  throw new Error('Failed to execute code');
-			}
-		  } catch (error) {
-			console.error('Error executing code:', error);
-		  }
-		};
-	};
+    setRunning(true);
+    const clientId = Date.now(); // Get a unique ID for each code execution
+    setCurrentId(clientId);
+    const code = context === "current" ? files[fileName].content : [files[fileName].content, ...Object.entries(files)
+      .filter(([key]) => key !== fileName)
+      .map(([, file]) => file.content)]
+      .join('\n');
+    
+    // Close existing SSE connections
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
+    
+    // Set up the SSE connection for the console
+    eventSourceRef.current = new EventSource(`http://localhost:8080/api/interpreter/console/${clientId}`);
+    
+    // Handle SSE events
+    eventSourceRef.current.addEventListener('CONSOLE_OUTPUT', (event) => {
+      setOutput(prev => {
+        const newOutput = [...prev, event.data];
+        return newOutput.slice(-100); // Limit to last 100 lines
+      });
+    });
+    
+    eventSourceRef.current.onerror = (error) => {
+      console.error('SSE Error:', error);
+      setOutput(prev => {
+        const newOutput = [...prev, "** Time limit exceeded **"];
+        return newOutput.slice(-100); // Limit to last 100 lines
+      });
+      eventSourceRef.current?.close();
+    };
+    
+    // Wait for SSE connection to be established before executing
+    eventSourceRef.current.onopen = async () => {
+      console.log("SSE connection established");
+      eventSourceRef.current?.addEventListener('EXECUTION_COMPLETED', () => {
+        eventSourceRef.current?.close();
+        setRunning(false);
+      });
+   
+      // Execute the code
+      try {
+        const response = await fetch(`http://localhost:8080/api/interpreter/execute/${clientId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ code: code }),
+        });
+    
+        if (!response.ok) {
+          throw new Error('Failed to execute code');
+        }
+      } catch (error) {
+        console.error('Error executing code:', error);
+      }
+    };
+   };
+
+   const stopRunning = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/interpreter/execute/stop/${currentId}`, {
+        method: 'POST',
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to stop code execution');
+      }
+    } catch (error) {
+      console.error('Error stopping execution:', error);
+    }
+    
+    eventSourceRef.current?.close();
+    setRunning(false);
+  };
     return (
         <div className="flex flex-col w-[70%] bg-accent p-4 rounded-lg border border-input shadow-sm">
             <TabBar 
@@ -136,7 +160,7 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
                 <ThemePicker onThemeChange={handleThemeChange} />
                 
 				<RunContext setContext={setContext}/>
-				<Button onClick={executeCode} className = "ml-[5px]">Run</Button>
+				<Button onClick={running ? stopRunning : executeCode} className = "ml-[5px]">{running ? "Stop" : "Run"}</Button>
             </div>        
         </div>
     );

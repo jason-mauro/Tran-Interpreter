@@ -15,7 +15,7 @@ public class InterpreterTests {
     public static ConsoleWrite consoleWrite = new ConsoleWrite() {{
         isVariadic = true;
         isShared = true;
-        name = "print";
+        name = "write";
 
     }};
 

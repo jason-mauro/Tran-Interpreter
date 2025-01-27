@@ -17,4 +17,8 @@ public class SyntaxErrorException extends Exception{
         return "SyntaxErrorException in file " + "'" + filename + "': " + message + " at line " + lineNumber + ", character " + characterPosition;
 
     }
+
+    public String getMessage() {
+        return "SyntaxErrorException in file " + "'" + filename + "': " + message + " at line " + lineNumber + ", character " + characterPosition;
+    }
 }

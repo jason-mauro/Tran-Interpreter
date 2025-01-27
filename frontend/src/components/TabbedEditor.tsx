@@ -61,67 +61,64 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
     setRunning(true);
     const clientId = Date.now(); // Get a unique ID for each code execution
     setCurrentId(clientId);
-
-    const code = context === "current"
-        ? "##" + fileName + "##" + files[fileName].content
-        : "##" + fileName + "##" +
-          [files[fileName].content, ...Object.entries(files)
-              .filter(([key]) => key !== fileName)
-              .map(([key, file]) => "##" + key + "##" + file.content)
-          ].join('\n');
-
+    const code = context === "current" ? "##" + fileName + "##" + files[fileName].content 
+      : "##" + fileName + "##" + [files[fileName].content, ...Object.entries(files)
+          .filter(([key]) => key !== fileName)
+          .map(([key, file]) => "##" + key + "##" + file.content)]
+          .join('\n');
+    
     // Close existing SSE connections
     if (eventSourceRef.current) {
-        eventSourceRef.current.close();
+      eventSourceRef.current.close();
     }
-
+    
     // Set up the SSE connection for the console
     eventSourceRef.current = new EventSource(`https://api.traninterpreter.com/api/interpreter/console/${clientId}`);
-
+    
     // Handle SSE events
     eventSourceRef.current.addEventListener('CONSOLE_OUTPUT', (event) => {
-        setOutput(prev => {
-            const newOutput = [...prev, event.data];
-            return newOutput.slice(-100); // Limit to last 100 lines
-        });
+      setOutput(prev => {
+        const newOutput = [...prev, event.data];
+        return newOutput.slice(-100); // Limit to last 100 lines
+      });
     });
-
-    eventSourceRef.current.addEventListener('EXECUTION_COMPLETED', () => {
+    
+    eventSourceRef.current.onerror = (error) => {
+      console.error('SSE Error:', error);
+      setOutput(prev => {
+        const newOutput = [...prev, "** Time limit exceeded **"];
+        return newOutput.slice(-100); // Limit to last 100 lines
+      });
+      setRunning(false);
+      eventSourceRef.current?.close();
+    };
+    
+    // Wait for SSE connection to be established before executing
+    eventSourceRef.current.onopen = async () => {
+      console.log("SSE connection established");
+      eventSourceRef.current?.addEventListener('EXECUTION_COMPLETED', () => {
         eventSourceRef.current?.close();
         setRunning(false);
-    });
-
-    eventSourceRef.current.addEventListener('CONNECTED', async () => {
-        console.log("SSE connection established (CONNECTED event)");
-
-        // Execute the code
-        try {
-            const response = await fetch(`https://api.traninterpreter.com/api/interpreter/execute/${clientId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ code: code }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to execute code');
-            }
-        } catch (error) {
-            console.error('Error executing code:', error);
-        }
-    });
-
-    eventSourceRef.current.onerror = (error) => {
-        console.error('SSE Error:', error);
-        setOutput(prev => {
-            const newOutput = [...prev, "** Time limit exceeded **"];
-            return newOutput.slice(-100); // Limit to last 100 lines
+      });
+   
+      // Execute the code
+      try {
+        const response = await fetch(`https://api.traninterpreter.com/api/interpreter/execute/${clientId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ code: code }),
         });
-        eventSourceRef.current?.close();
+    
+        if (!response.ok) {
+          throw new Error('Failed to execute code');
+        }
+      } catch (error) {
+        console.error('Error executing code:', error);
+      }
     };
-};
-
+   };
 
    const stopRunning = async () => {
     try {

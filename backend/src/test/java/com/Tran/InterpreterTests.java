@@ -41,6 +41,7 @@ public class InterpreterTests {
     @Test
     public void SimpleAddInstantiate() {
         String program = """
+                ##filename##
                 class demotwo
                     shared start()
                         console.write("Hello Nick")""";
@@ -152,8 +153,9 @@ public class InterpreterTests {
             var tokens = l.Lex();
             var tran = new TranNode();
             var p = new Parser(tran,tokens);
+            System.out.println(tokens);
             p.Tran();
-            System.out.println(tran);
+
             var i = new Interpreter(tran, consoleWrite, new AtomicBoolean(false));
             i.start();
             return tran;

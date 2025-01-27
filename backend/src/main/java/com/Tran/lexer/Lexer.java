@@ -199,8 +199,14 @@ public class Lexer {
                 columnNumber = 0;
                 lineNumber = 1;
                 textManager.getCharacter();
-                var fileName = parseWord().getValue();
-                textManager.setFileName(fileName);
+                StringBuilder fileNameBuffer = new StringBuilder(Character.toString(textManager.getCharacter()));
+                while(textManager.peekCharacter() != '#'){
+                    fileNameBuffer.append(textManager.getCharacter());
+                }
+                textManager.setFileName(fileNameBuffer.toString());
+                textManager.getCharacter();
+                textManager.getCharacter();
+
                 return null;
             } else {
                 throw new SyntaxErrorException("Invalid Punctuation", lineNumber, columnNumber, textManager.getFileName());

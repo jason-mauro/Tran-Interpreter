@@ -61,10 +61,11 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
     setRunning(true);
     const clientId = Date.now(); // Get a unique ID for each code execution
     setCurrentId(clientId);
-    const code = context === "current" ? files[fileName].content : [files[fileName].content, ...Object.entries(files)
-      .filter(([key]) => key !== fileName)
-      .map(([, file]) => file.content)]
-      .join('\n');
+    const code = context === "current" ? "##" + fileName + "##" + files[fileName].content 
+      : "##" + fileName + "##" + [files[fileName].content, ...Object.entries(files)
+          .filter(([key]) => key !== fileName)
+          .map(([key, file]) => "##" + key + "##" + file.content)]
+          .join('\n');
     
     // Close existing SSE connections
     if (eventSourceRef.current) {

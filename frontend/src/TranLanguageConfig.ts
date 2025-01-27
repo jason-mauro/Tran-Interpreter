@@ -10,7 +10,7 @@ export const tran = {
 
   operators: [
     "=", "==", "!=", "<", ">", "<=", ">=", "+", "-", "*", "/", 
-    "%", ":", ".", ",", "and", "or", "not"
+    "%", ":", ".", ","
   ],
 
   symbols: /[=><!~?:&|+\-*\/^%]+/,
@@ -19,7 +19,7 @@ export const tran = {
   tokenizer: {
     root: [
       // Keywords
-      [/\b(accessor|mutator|implements|class|interface|loop|if|else|true|false|new|private|shared|construct|null|and|or|not)\b/, "keyword"],
+      [/\b(accessor|mutator|implements|class|interface|loop|if|else|new|private|shared|construct)\b/, "keyword"],
 
       // Operators and Symbols
       [/[=]=?|!=|[<>]=?|[+\-*/%:.,]/, "operator"],

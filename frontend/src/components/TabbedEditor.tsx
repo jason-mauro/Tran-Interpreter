@@ -73,7 +73,7 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
     }
     
     // Set up the SSE connection for the console
-    eventSourceRef.current = new EventSource(`https:localhost:8080/api/interpreter/console/${clientId}`);
+    eventSourceRef.current = new EventSource(`https//:localhost:8080/api/interpreter/console/${clientId}`);
     
     // Handle SSE events
     eventSourceRef.current.addEventListener('CONSOLE_OUTPUT', (event) => {
@@ -121,7 +121,7 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
 
    const stopRunning = async () => {
     try {
-      const response = await fetch(`https:localhost:8080/api/interpreter/execute/stop/${currentId}`, {
+      const response = await fetch(`https://localhost:8080/api/interpreter/execute/stop/${currentId}`, {
         method: 'POST',
       });
   

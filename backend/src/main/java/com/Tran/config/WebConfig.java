@@ -13,7 +13,8 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedOrigins("https://tran-interpreter.vercel.app", "https://traninterpreter.com", "http://localhost:5173") // Replace with your frontend's origin
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // HTTP methods allowed
                 .allowedHeaders("*") // Allow all headers
-                .exposedHeaders("Access-Control-Allow-Origin") // Headers exposed to the client
+                .exposedHeaders("Access-Control-Allow-Origin", "Cache-Control", "Content-Type") // Headers exposed to the client
                 .allowCredentials(true); // Allow cookies or credentials
+
     }
 }

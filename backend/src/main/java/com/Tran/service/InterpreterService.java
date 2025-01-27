@@ -6,6 +6,7 @@ import com.Tran.lexer.Lexer;
 import com.Tran.parser.AST.TranNode;
 import com.Tran.parser.Parser;
 import com.Tran.utils.Token;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -48,10 +49,13 @@ public class InterpreterService {
 
         // Send an immediate response to confirm connection
         try {
+            emitter.send(HttpStatus.OK);
             sendEvent(emitter, "CONNECTED", "SSE connection established");
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
 
         return emitter;
     }
@@ -70,6 +74,7 @@ public class InterpreterService {
             emitters.remove(clientId);
             consoleWriters.remove(clientId);
             System.out.println("SSE connection timed out for client: " + clientId);
+            emitter.complete();
         });
         return emitter;
     }

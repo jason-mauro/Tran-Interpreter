@@ -1,12 +1,22 @@
 package com.Tran.utils;
 
 public class TextManager {
-    private String text;
+    private final String text;
     private int position;
+    private String fileName;
 
     public TextManager(String input) {
         this.text = input;
         this.position = 0;
+        this.fileName = "";
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public String getFileName() {
+        return this.fileName;
     }
 
     public boolean isAtEnd() {

@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class InterpreterService {
@@ -21,6 +22,7 @@ public class InterpreterService {
     // Map to store active emitters and associated console writers for each client
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
     private final Map<String, ConsoleWrite> consoleWriters = new ConcurrentHashMap<>();
+    private final Map<String, AtomicBoolean> executionCancellations = new ConcurrentHashMap<>(); // Cancel execution
 
     /**
      * Creates a new console emitter for the client.
@@ -41,6 +43,8 @@ public class InterpreterService {
             sseEmitter = emitter;
         }};
         consoleWriters.put(clientId, consoleWrite);
+        AtomicBoolean executionCancellation = new AtomicBoolean(false);
+        executionCancellations.put(clientId, executionCancellation);
 
         // Send an immediate response to confirm connection
         try {
@@ -53,7 +57,7 @@ public class InterpreterService {
     }
 
     private SseEmitter getEmitter(String clientId) {
-        SseEmitter emitter = new SseEmitter(30000L); // Set timeout to 30 seconds
+        SseEmitter emitter = new SseEmitter(20000L); // Set timeout to 20 seconds
 
         // Cleanup logic on completion or timeout
         emitter.onCompletion(() -> {
@@ -100,27 +104,35 @@ public class InterpreterService {
 
         CompletableFuture.runAsync(() -> {
             try {
-                sendEvent(emitter, "STARTED", "Interpreting initiated");
-
                 // Create a new interpreter for this execution
                 TranNode ast = new TranNode();
                 Lexer lexer = new Lexer(code);
                 List<Token> tokens = lexer.Lex();
                 Parser parser = new Parser(ast, tokens);
                 parser.Tran();
-
-                Interpreter interpreter = new Interpreter(ast, consoleWrite);
+                Interpreter interpreter = new Interpreter(ast, consoleWrite, executionCancellations.get(clientId));
                 interpreter.start();
-
-                sendEvent(emitter, "EXECUTION_COMPLETED", "Execution completed");
+                sendEvent(emitter, "CONSOLE_OUTPUT", "** Process Exited Successfully **");
+                sendEvent(emitter, "EXECUTION_COMPLETED", "");
+                emitter.complete();
             } catch (Exception e) {
                 try {
-                    sendEvent(emitter, "CONSOLE_OUTPUT", e.toString());
+                    if (e instanceof InterruptedException) {
+                        sendEvent(emitter, "CONSOLE_OUTPUT", "** Code Execution Interrupted");
+                    }
+                    sendEvent(emitter, "CONSOLE_OUTPUT", e.getMessage());
+                    sendEvent(emitter, "EXECUTION_COMPLETED", "");
+                    emitter.complete();
+                    executionCancellations.remove(clientId);
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }
             }
         });
+    }
+
+    public void stopExecution(String clientId) {
+        executionCancellations.get(clientId).compareAndSet(false, true);
     }
 }
 

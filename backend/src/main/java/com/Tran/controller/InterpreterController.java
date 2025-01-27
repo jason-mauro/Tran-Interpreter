@@ -25,5 +25,10 @@ public class InterpreterController {
         interpreterService.executeCode(code, clientId);
     }
 
+    @PostMapping("/execute/stop/{clientId}")
+    public void stop(@PathVariable String clientId) {
+
+        interpreterService.stopExecution(clientId);
+    }
 
 }

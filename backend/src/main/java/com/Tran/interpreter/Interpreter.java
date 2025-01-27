@@ -3,15 +3,17 @@ import com.Tran.parser.AST.*;
 import com.Tran.utils.*;
 import com.Tran.interpreter.BuiltIns.*;
 import com.Tran.interpreter.DataTypes.*;
-import org.springframework.web.socket.WebSocketSession;
+import com.Tran.utils.InterruptedException;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Interpreter {
-
+    private AtomicBoolean stopRunning;
     private TranNode top;
     private HashMap<String, MethodDeclarationNode> BuiltInMethods = new HashMap<>();
     private HashMap<String, HashMap<String, InterpreterDataType>> staticMemberMap = new HashMap<>(); // Class -> members -> data
+
 
     /** Constructor - get the interpreter ready to run. Set members from parameters and "prepare" the class.
      *
@@ -19,7 +21,7 @@ public class Interpreter {
      * Add any built-in methods to the AST
      * @param top - the head of the AST
      */
-    public Interpreter(TranNode top, ConsoleWrite consoleWrite){
+    public Interpreter(TranNode top, ConsoleWrite consoleWrite, AtomicBoolean stopRunning) {
         // Populate the members
         this.top = top;
         // Add built-in class and methods for Console
@@ -34,6 +36,15 @@ public class Interpreter {
         top.Classes.add(getNumberIterator());
         // Add the boolean built-in class
         top.Classes.add(Boolean());
+        this.stopRunning = stopRunning;
+    }
+
+    /**
+     * Send a signal to stop executing the code
+     * @param stopRunning signal to stop running
+     */
+    public void setStopRunning(AtomicBoolean stopRunning) {
+        this.stopRunning = stopRunning;
     }
 
     private ClassNode Boolean(){
@@ -194,13 +205,13 @@ public class Interpreter {
         for (var i : top.Interfaces){
             for (var c : top.Classes){
                 if (c.name.equals(i.name)){
-                    throw new RuntimeException(String.format("Class: %s can not have the same name as interface: %s", c.name, i.name));
+                    throw new TranRuntimeException(String.format("Class: %s can not have the same name as interface: %s", c.name, i.name));
                 }
             }
         }
         for (var c : top.Classes){
             for (var m : c.members){
-                if (c.memberMap.containsKey(m.declaration.name) || staticMemberMap.containsKey(c) && staticMemberMap.get(c).containsKey(m.declaration.name)){
+                if (c.memberMap.containsKey(m.declaration.name) || staticMemberMap.containsKey(c.name) && staticMemberMap.get(c.name).containsKey(m.declaration.name)){
                     throw new Exception(String.format("Variable '%s' is already defined in scope", m.declaration.name));
                 } else {
                     if (m.isShared){
@@ -245,14 +256,14 @@ public class Interpreter {
             for (var m : c.constructors){
                 for (var l : m.locals){
                     if (m.localMap.containsKey(l.name)){
-                        throw new RuntimeException(String.format("Variable '%s' is already defined in method scope", l.name));
+                        throw new TranRuntimeException(String.format("Variable '%s' is already defined in method scope", l.name));
                     } else {
                         m.localMap.put(l.name, instantiate(l.type));
                     }
                 }
                 for (var l : m.parameters){
                     if (m.localMap.containsKey(l.name)){
-                        throw new RuntimeException(String.format("Variable '%s' is already defined in method scope", l.name));
+                        throw new TranRuntimeException(String.format("Variable '%s' is already defined in method scope", l.name));
                     } else {
                         m.localMap.put(l.name, instantiate(l.type));
                     }
@@ -260,14 +271,6 @@ public class Interpreter {
 
             }
         }
-    }
-
-    /**
-     * Mutator for the TranNode which contains the ast
-     * @param top - new TranNode
-     */
-    public void setTop(TranNode top) {
-        this.top = top;
     }
 
     /**
@@ -284,16 +287,14 @@ public class Interpreter {
          //Search through classes in top and find a method called start which isShared.
          //Create the methods to be Interpreter Data Types
         for (var c : top.Classes){
-            System.out.println(c);
             for (var m : c.methods){
                 if (m.isShared && m.name.equals("start") && m.parameters.isEmpty()){
-                    interpretMethodCall(Optional.of(new ObjectIDT(c){{this.isSharedMethodCall = true;}}), m, new ArrayList<InterpreterDataType>());
+                    interpretMethodCall(Optional.of(new ObjectIDT(c){{this.isSharedMethodCall = true;}}), m, new ArrayList<>());
                     return;
                 }
             }
         }
-        throw new RuntimeException("Shared Method start() was not found. Make sure to include a shared start() in order to run a program!");
-
+        throw new TranRuntimeException("Shared Method start() was not found. Make sure to include a shared start() in order to run a program!");
     }
 
 
@@ -304,13 +305,11 @@ public class Interpreter {
      * Find the method (local to this class, shared (like Java's system.out.print), or a method on another class)
      * Evaluate the parameters to have a list of values
      * Use interpretMethodCall() to actually run the method.1
-     *
      * Call GetParameters() to get the parameter value list
      * Find the method. This is tricky - there are several cases:
      * someLocalMethod() - has NO object name. Look in "object"
      * console.write() - the objectName is a CLASS and the method is shared
      * bestStudent.getGPA() - the objectName is a local or a member
-     *
      * Once you find the method, call InterpretMethodCall() on it. Return the list that it returns.
      * Throw an exception if we can't find a match.
      * @param object - the object we are inside right now (might be empty) this is for method calls with the
@@ -319,7 +318,10 @@ public class Interpreter {
      * @return - the return values
      */
     private List<InterpreterDataType> findMethodForMethodCallAndRunIt(Optional<ObjectIDT> object, HashMap<String, InterpreterDataType> locals, MethodCallStatementNode mc) {
-
+        // Stop Execution if user sends signal
+        if (stopRunning.get()){
+            throw new InterruptedException("** Program Execution Interrupted **");
+        }
         List<InterpreterDataType> parameters = getParameters(object, locals, mc);
         if (mc.object.isPresent()){
             if (mc.object.get() instanceof VariableReferenceNode){
@@ -335,24 +337,24 @@ public class Interpreter {
                                 }
                             }
                         }
-                        throw new RuntimeException("MethodCall on a Class was called, but the method was not shared");
+                        throw new TranRuntimeException("MethodCall on a Class was called, but the method was not shared");
                     }
-                    throw new RuntimeException("MethodCall on a Class was called, but the method could not be found: " + mc.methodName);
+                    throw new TranRuntimeException("MethodCall on a Class was called, but the method could not be found: " + mc.methodName);
                 }
             }
             InterpreterDataType callerObject = evaluate(locals, object, mc.object.get());
             if (!(callerObject instanceof ReferenceIDT)){
-                throw new RuntimeException("Trying to call a method on an IDT on a primitive type");
+                throw new TranRuntimeException("Trying to call a method on an IDT on a primitive type");
             }
             if ((((ReferenceIDT) callerObject).refersTo.get().astNode == null)){
-                throw new RuntimeException("Trying to call method on a uninitialized object");
+                throw new TranRuntimeException("Trying to call method on a uninitialized object");
             }
             if (((ReferenceIDT) callerObject).refersTo.get().astNode.methodMap.containsKey(mc.methodName)){
                 var methods = ((ReferenceIDT) callerObject).refersTo.get().astNode.methodMap.get(mc.methodName);
                 for (var m : methods) {
                     if (doesMatch(m, mc, parameters)) {
                         if (m.isPrivate){
-                            throw new RuntimeException("Method was called on a private function which can not be accessed by an instance of the class");
+                            throw new TranRuntimeException("Method was called on a private function which can not be accessed by an instance of the class");
                         }
                         if (m.isShared){
                             return interpretMethodCall(Optional.of(new ObjectIDT(((ReferenceIDT) callerObject).refersTo.get().astNode){{this.isSharedMethodCall = true;}}), m, parameters);
@@ -366,11 +368,11 @@ public class Interpreter {
                     return interpretMethodCall(((ReferenceIDT) callerObject).refersTo, BuiltInMethods.get(mc.methodName), parameters);
                 }
             }
-            throw new RuntimeException("Method was called on an reference, but the method does not exist");
+            throw new TranRuntimeException("Method was called on an reference, but the method does not exist");
         } else {
             // If we are in a current object as no classname or reference name was specified
             if (object.isEmpty()){
-                throw new RuntimeException("Current Object is not defined and no methods can be checked");
+                throw new TranRuntimeException("Current Object is not defined and no methods can be checked");
             }
             return interpretMethodCall(object, getMethodFromObject(object.get(), mc, parameters), parameters);
         }
@@ -393,6 +395,10 @@ public class Interpreter {
      * @return the returned values from the method
      */
     private List<InterpreterDataType> interpretMethodCall(Optional<ObjectIDT> object, MethodDeclarationNode m, List<InterpreterDataType> values) {
+        // Stop Execution if user sends signal
+        if (stopRunning.get()){
+            throw new InterruptedException("** Program Execution Interrupted **");
+        }
         // Only built in method implemented for now is console.write
         if (m instanceof ConsoleWrite){
             return ((ConsoleWrite) m).Execute(values);
@@ -401,7 +407,7 @@ public class Interpreter {
         if (m.returns.isEmpty() && m.parameters.isEmpty() && m.statements.isEmpty() && m.name.equals("clone")){
             // Create a deep copy of the object
             if (object.isEmpty()){
-                throw new RuntimeException("Clone was called with no object");
+                throw new TranRuntimeException("Clone was called with no object");
             }
             var newObject = new ObjectIDT(object.get().astNode);
             newObject.members.putAll(object.get().members);
@@ -414,21 +420,21 @@ public class Interpreter {
 
         for (var l : m.locals){
             if (methodLocals.containsKey(l.name)){
-                throw new RuntimeException(String.format("Variable '%s' is already defined in method scope", l.name));
+                throw new TranRuntimeException(String.format("Variable '%s' is already defined in method scope", l.name));
             } else {
                 methodLocals.put(l.name, instantiate(l.type));
             }
         }
         for (var l : m.parameters){
             if (methodLocals.containsKey(l.name)){
-                throw new RuntimeException(String.format("Variable '%s' is already defined in method scope", l.name));
+                throw new TranRuntimeException(String.format("Variable '%s' is already defined in method scope", l.name));
             } else {
                 methodLocals.put(l.name, instantiate(l.type));
             }
         }
         for (var l : m.returns){
             if (methodLocals.containsKey(l.name)){
-                throw new RuntimeException(String.format("Variable '%s' is already defined in method scope", l.name));
+                throw new TranRuntimeException(String.format("Variable '%s' is already defined in method scope", l.name));
             } else {
                 methodLocals.put(l.name, instantiate(l.type));
             }
@@ -443,7 +449,7 @@ public class Interpreter {
 
         for(var x : m.returns){
             if(!methodLocals.get(x.name).isInitialized()){
-                throw new RuntimeException("Method has a return variable of " + x.name + " but was not assigned during the method call");
+                throw new TranRuntimeException("Method has a return variable of " + x.name + " but was not assigned during the method call");
             }
             retVal.add(methodLocals.get(x.name));
         }
@@ -466,13 +472,17 @@ public class Interpreter {
      * @param newOne - the object that we just created that we are calling the constructor for
      */
     private void findConstructorAndRunIt(Optional<ObjectIDT> callerObj, HashMap<String, InterpreterDataType> locals, NewNode cn, ObjectIDT newOne) {
+        // Stop Execution if user sends signal
+        if (stopRunning.get()){
+            throw new InterruptedException("** Program Execution Interrupted **");
+        }
         List<InterpreterDataType> parameters = new LinkedList<>();
         for (var x : cn.parameters){
             parameters.add(evaluate(locals, callerObj, x));
         }
         var classNode = getClassByName(cn.className);
         if (classNode.isEmpty()){
-            throw new RuntimeException("Class not found: " + cn.className);
+            throw new TranRuntimeException("Class not found: " + cn.className);
         }
         for (var c : classNode.get().constructors){
             if (doesConstructorMatch(c, parameters)){
@@ -493,6 +503,10 @@ public class Interpreter {
      * @param values - the parameter values being passed to the constructor
      */
     private void interpretConstructorCall(ObjectIDT object, ConstructorNode c, List<InterpreterDataType> values) {
+        // Stop Execution if user sends signal
+        if (stopRunning.get()){
+            throw new InterruptedException("** Program Execution Interrupted **");
+        }
         for (int i = 0; i < values.size(); i++){
             c.localMap.get(c.parameters.get(i).name).Assign(values.get(i));
         }
@@ -500,10 +514,8 @@ public class Interpreter {
     }
 
     //              Running Instructions
-    // TODO: Fix the iterator similar to the java iterator returns integer
-    // TODO: Add clone to the thing
     /**
-     * Given a block (which could be from a method or an "if" or "loop" block, run each statement.
+     * Given a block (which could be from a method or an "if" or "loop" block, run each statement).
      * Blocks, by definition, do ever statement, so iterating over the statements makes sense.
      *
      * For each statement in statements:
@@ -526,6 +538,10 @@ public class Interpreter {
      * @param locals - the local variables
      */
     private void interpretStatementBlock(Optional<ObjectIDT> object, List<StatementNode> statements, HashMap<String, InterpreterDataType> locals) {
+        // Stop Execution if user sends signal
+        if (stopRunning.get()){
+            throw new InterruptedException("** Program Execution Interrupted **");
+        }
         for (var s : statements){
             if (s instanceof AssignmentNode){
                 if (((AssignmentNode) s).target instanceof VariableReferenceNode){
@@ -549,7 +565,7 @@ public class Interpreter {
             } else if (s instanceof IfNode){
                 var conditionValue = evaluate(locals, object, ((IfNode) s).condition);
                 if (!(conditionValue instanceof BooleanIDT)){
-                    throw new RuntimeException("If condition expression is not a boolean");
+                    throw new TranRuntimeException("If condition expression is not a boolean");
                 }
                 if (((BooleanIDT) conditionValue).Value){
                     interpretStatementBlock(object, ((IfNode) s).statements, locals);
@@ -567,7 +583,7 @@ public class Interpreter {
                         iteratedObject = findMember((MemberExpressionNode) ((MethodCallExpressionNode) ((LoopNode) s).expression).object.get(), locals, object);
                     }
                     if (!iteratedObject.isInitialized()){
-                        throw new RuntimeException("Trying to use iterator on an object that was not initialized");
+                        throw new TranRuntimeException("Trying to use iterator on an object that was not initialized");
                     }
 
                     if (iteratedObject instanceof NumberIDT){
@@ -593,12 +609,12 @@ public class Interpreter {
                     } else if (iteratedObject instanceof ReferenceIDT && ((ReferenceIDT) iteratedObject).refersTo.get().astNode.interfaces.contains("iterator")){
 
                     } else {
-                        throw new RuntimeException("Trying to use iterator on an object that does not implement the iterator interface");
+                        throw new TranRuntimeException("Trying to use iterator on an object that does not implement the iterator interface");
                     }
                 } else { // Boolean Expression
                     var condition = evaluate(locals, object, ((LoopNode) s).expression);
                     if (!(condition instanceof BooleanIDT)){
-                        throw new RuntimeException("Loop expression is not a boolean");
+                        throw new TranRuntimeException("Loop expression is not a boolean");
                     }
                     while(((BooleanIDT) condition).Value){
                         interpretStatementBlock(object, ((LoopNode) s).statements, locals);
@@ -628,6 +644,10 @@ public class Interpreter {
      * @return a value
      */
     private InterpreterDataType evaluate(HashMap<String, InterpreterDataType> locals, Optional<ObjectIDT> object, ExpressionNode expression){
+        // Stop Execution if user sends signal
+        if (stopRunning.get()){
+            throw new InterruptedException("** Program Execution Interrupted **");
+        }
         if (expression instanceof NumericLiteralNode){
             return new NumberIDT(((NumericLiteralNode) expression).value);
         } else if (expression instanceof StringLiteralNode){
@@ -646,10 +666,10 @@ public class Interpreter {
             InterpreterDataType left = evaluate(locals, object, ((MathOpNode) expression).left);
             InterpreterDataType right = evaluate(locals, object, ((MathOpNode) expression).right);
             if (left instanceof BooleanIDT || right instanceof BooleanIDT){
-                throw new RuntimeException("Invalid Arithmetic Expression with Booleans");
+                throw new TranRuntimeException("Invalid Arithmetic Expression with Booleans");
             }
             if ((left instanceof StringIDT || right instanceof StringIDT) && !((MathOpNode) expression).op.equals(MathOpNode.MathOperations.add)){
-                throw new RuntimeException("Only String concatenation is allowed for strings");
+                throw new TranRuntimeException("Only String concatenation is allowed for strings");
             }
             // String + String = String
             if (left instanceof StringIDT && right instanceof StringIDT){
@@ -683,7 +703,7 @@ public class Interpreter {
                     }
                 }
             }
-            throw new RuntimeException("Invalid Arithmetic Expression " + expression);
+            throw new TranRuntimeException("Invalid Arithmetic Expression " + expression);
         } else if (expression instanceof NotOpNode){
             // Process NotOpNodes
             InterpreterDataType value = evaluate(locals, object, expression);
@@ -700,13 +720,13 @@ public class Interpreter {
                     return new BooleanIDT(((BooleanIDT) left).Value && ((BooleanIDT) right).Value);
                 }
             }
-            throw new RuntimeException("Invalid Boolean Comparison on types");
+            throw new TranRuntimeException("Invalid Boolean Comparison on types");
 
 
         } else if (expression instanceof MethodCallExpressionNode){
             List<InterpreterDataType> retVals = findMethodForMethodCallAndRunIt(object, locals, new MethodCallStatementNode((MethodCallExpressionNode) expression));
             if (retVals.isEmpty()){
-                throw new RuntimeException("void method has no value and can not be assigned to a variable");
+                throw new TranRuntimeException("void method has no value and can not be assigned to a variable");
             }
             return retVals.getFirst();
         } else if (expression instanceof CompareNode){ // Comparisons are only valid for String, Number, and Characters
@@ -822,12 +842,12 @@ public class Interpreter {
                     }
                 }
             }
-            throw new RuntimeException("Invalid Comparison of different or invalid types");
+            throw new TranRuntimeException("Invalid Comparison of different or invalid types");
         } else if (expression instanceof NewNode){
             // the object is the object that the reference refers to
             var classNode = getClassByName(((NewNode) expression).className);
             if (classNode.isEmpty()){
-                throw new RuntimeException("Class not found: " + ((NewNode) expression).className);
+                throw new TranRuntimeException("Class not found: " + ((NewNode) expression).className);
             }
             ObjectIDT newObject = new ObjectIDT(classNode.get());
             newObject.members = new HashMap<>();
@@ -839,7 +859,7 @@ public class Interpreter {
             findConstructorAndRunIt(Optional.of(newObject), locals, (NewNode) expression, newObject);
             return newObject;
         }
-        throw new RuntimeException("Invalid Expression");
+        throw new TranRuntimeException("Invalid Expression");
     }
 
     //              Utility Methods
@@ -962,13 +982,13 @@ public class Interpreter {
      */
     private MethodDeclarationNode getMethodFromObject(ObjectIDT object, MethodCallStatementNode mc, List<InterpreterDataType> parameters) {
         if (!object.astNode.methodMap.containsKey(mc.methodName)){
-            throw new RuntimeException("Method was called but the method was not found in the current object");
+            throw new TranRuntimeException("Method was called but the method was not found in the current object");
         }
         var methods = object.astNode.methodMap.get(mc.methodName);
         for (var m : methods) {
             if (doesMatch(m, mc, parameters)) {
                 if (object.isSharedMethodCall && !m.isShared){
-                    throw new RuntimeException("Trying to call a non-shared method from a class in start() without an instance of the class");
+                    throw new TranRuntimeException("Trying to call a non-shared method from a class in start() without an instance of the class");
                 }
                 return m;
             }
@@ -976,7 +996,7 @@ public class Interpreter {
         if (BuiltInMethods.containsKey(mc.methodName)){
             return BuiltInMethods.get(mc.methodName);
         }
-        throw new RuntimeException("Unable to resolve method call " + mc);
+        throw new TranRuntimeException("Unable to resolve method call " + mc);
     }
 
     /**
@@ -1022,10 +1042,9 @@ public class Interpreter {
         if (classNode.isPresent()){
             return new ObjectIDT(classNode.get()){{this.isSharedMethodCall = true;}};
         }
-        throw new RuntimeException("Unable to find variable " + name);
+        throw new TranRuntimeException("Unable to find variable '" + name + "'");
     }
 
-// TODO: TEST IF THE MEMBERS FROM CLASSES WORK ON SHARED MEMBERS AND ADD THIS TO THE SET MEMBER FOR MUTATORS ON SHARED VARIABELS
     private InterpreterDataType findMember(MemberExpressionNode member, HashMap<String,InterpreterDataType> locals, Optional<ObjectIDT> object) {
         InterpreterDataType callerObject = evaluate(locals, object, member.object);
 
@@ -1036,21 +1055,20 @@ public class Interpreter {
             if (callerObject instanceof ObjectIDT){
                 String memberName = ((VariableReferenceNode) member.property).name;
                 if (!((ObjectIDT) callerObject).astNode.accessors.containsKey(memberName)){
-                    System.out.println(callerObject);
-                    throw new RuntimeException("Unable to find accessor: " + memberName);
+                    throw new TranRuntimeException("Unable to find accessor: " + memberName);
                 } else if (!((ObjectIDT) callerObject).astNode.accessors.get(memberName).isShared) {
-                    throw new RuntimeException("Trying to access member using class name, but the member is not shared");
+                    throw new TranRuntimeException("Trying to access member using class name, but the member is not shared");
                 }
                 return interpretMethodCall(Optional.of((ObjectIDT) callerObject), ((ObjectIDT) callerObject).astNode.accessors.get(memberName), List.of()).getFirst();
 
             }
-            throw new RuntimeException("Trying to access a member on an IDT that is not a reference (Not an object)");
+            throw new TranRuntimeException("Trying to access a member on an IDT that is not a reference (Not an object)");
         }
         ObjectIDT actualObject = ((ReferenceIDT) callerObject).refersTo.get();
         String memberName = ((VariableReferenceNode) member.property).name;
 
         if (!((ReferenceIDT) callerObject).refersTo.get().astNode.accessors.containsKey(memberName)){
-            throw new RuntimeException("Member :" + ((VariableReferenceNode)member.property).name + "Does not have a valid accessor and therefore cannot be accessed");
+            throw new TranRuntimeException("Member :" + ((VariableReferenceNode)member.property).name + "Does not have a valid accessor and therefore cannot be accessed");
         }
         return interpretMethodCall(((ReferenceIDT) callerObject).refersTo, ((ReferenceIDT) callerObject).refersTo.get().astNode.accessors.get(memberName), List.of()).getFirst();
     }
@@ -1064,23 +1082,23 @@ public class Interpreter {
                 if (callerObject instanceof ObjectIDT){
                     String memberName = ((VariableReferenceNode) member.property).name;
                     if (!((ObjectIDT) callerObject).astNode.mutators.containsKey(memberName)){
-                        throw new RuntimeException("Unable to find mutator: " + memberName);
+                        throw new TranRuntimeException("Unable to find mutator: " + memberName);
                     } else if (!((ObjectIDT) callerObject).astNode.mutators.get(memberName).isShared) {
-                        throw new RuntimeException("Trying to access member using class name, but the member is not shared");
+                        throw new TranRuntimeException("Trying to access member using class name, but the member is not shared");
                     }
                     List<InterpreterDataType> parameter = new LinkedList<>();
                     parameter.add(value);
                     interpretMethodCall(Optional.of((ObjectIDT) callerObject), ((ObjectIDT) callerObject).astNode.mutators.get(memberName), parameter);
 
                 }
-                throw new RuntimeException("Trying to access a member on an IDT that is not a reference (Not an object)");
+                throw new TranRuntimeException("Trying to access a member on an IDT that is not a reference (Not an object)");
             }
-            throw new RuntimeException("Trying to access a member on an IDT that is not a reference (Not an object)");
+            throw new TranRuntimeException("Trying to access a member on an IDT that is not a reference (Not an object)");
         }
         ObjectIDT actualObject = ((ReferenceIDT) callerObject).refersTo.get();
         String memberName = ((VariableReferenceNode) member.property).name;
         if (!((ReferenceIDT) callerObject).refersTo.get().astNode.mutators.containsKey(memberName)){
-            throw new RuntimeException("Member :" + ((VariableReferenceNode)member.property).name + "Does not have a valid mutator and therefore it's value can not be changed.");
+            throw new TranRuntimeException("Member :" + ((VariableReferenceNode)member.property).name + "Does not have a valid mutator and therefore it's value can not be changed.");
         }
         List<InterpreterDataType> parameter = new LinkedList<>();
         parameter.add(value);
@@ -1118,7 +1136,7 @@ public class Interpreter {
 
                         }
                     }
-                    throw new RuntimeException(String.format("Unable to find the class that '%s' is type of", type));
+                    throw new TranRuntimeException(String.format("Unable to find the class that '%s' is type of", type));
                 }
                 // Sets the class that the variable references to. Members will be set in the constructor call
                 return new ReferenceIDT(){{this.refersTo = Optional.of(new ObjectIDT(null)); this.validAstNodes.add(classNode.get());}};

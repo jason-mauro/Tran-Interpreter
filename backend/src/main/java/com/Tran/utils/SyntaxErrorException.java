@@ -15,4 +15,8 @@ public class SyntaxErrorException extends Exception{
         return "SyntaxErrorException: " + message + " at line " + lineNumber + ", character " + characterPosition;
 
     }
+
+    public String getMessage() {
+        return "SyntaxErrorException: " + message + " at line " + lineNumber + ", character " + characterPosition;
+    }
 }

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import com.Tran.lexer.*;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class InterpreterTests {
     public static ConsoleWrite consoleWrite = new ConsoleWrite() {{
@@ -151,10 +152,11 @@ public class InterpreterTests {
             var tran = new TranNode();
             var p = new Parser(tran,tokens);
             p.Tran();
-            var i = new Interpreter(tran, consoleWrite);
+            var i = new Interpreter(tran, consoleWrite, new AtomicBoolean(false));
             i.start();
             return tran;
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             throw new RuntimeException(e);
         }
     }

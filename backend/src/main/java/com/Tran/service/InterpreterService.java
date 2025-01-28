@@ -111,19 +111,11 @@ public class InterpreterService {
         CompletableFuture.runAsync(() -> {
             try {
                 // Create a new interpreter for this execution
-                System.out.println("RUnning");
                 TranNode ast = new TranNode();
-                System.out.println("Created Tran Node");
                 Lexer lexer = new Lexer(code);
-                System.out.println("Finished lexing");
                 List<Token> tokens = lexer.Lex();
-                System.out.println(tokens);
-                System.out.println("PARSING");
                 Parser parser = new Parser(ast, tokens);
                 parser.Tran();
-                System.out.println("Finished parsing");
-                System.out.println(ast.toString());
-                System.out.println("Starting interpereting");
                 Interpreter interpreter = new Interpreter(ast, consoleWrite, executionCancellations.get(clientId));
                 interpreter.start();
                 sendEvent(emitter, "CONSOLE_OUTPUT", "** Process Exited Successfully **");

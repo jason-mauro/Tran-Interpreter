@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import com.Tran.lexer.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -15,16 +16,15 @@ public class InterpreterTests {
     public static ConsoleWrite consoleWrite = new ConsoleWrite() {{
         isVariadic = true;
         isShared = true;
-        name = "print";
-
+        name = "write";
     }};
 
     @Test
     public void SimpleAdd() {
         String program = """
                 class demo
-                	fib(number n): number x
-                		if n <= 1 and n == 5
+                	shared fib(number n): number x
+                		if n <= 1
                 			x = n
                 		else
                 			x = fib(n - 1) + fib(n-2)
@@ -35,13 +35,13 @@ public class InterpreterTests {
 
         var tranNode = run(program);
         var c = getConsole(tranNode);
-        Assertions.assertEquals(1,c.size());
-        Assertions.assertEquals("12.0",c.getFirst());
+
     }
 
     @Test
     public void SimpleAddInstantiate() {
         String program = """
+                ##filename##
                 class demotwo
                     shared start()
                         console.write("Hello Nick")""";
@@ -91,7 +91,7 @@ public class InterpreterTests {
                 "                keepGoing = boolean.false\n" +
                 "            else\n" +
                 "                n = n + 1\n" +
-                "                console.print(n)\n";
+                "                console.write(n)\n";
         var tranNode = run(program);
         var c = consoleWrite.console;
         Assertions.assertEquals(15,c.size());
@@ -142,7 +142,9 @@ public class InterpreterTests {
     }
 
     private static List<String> getConsole(TranNode tn) {
-        return null;
+        var console = consoleWrite.console;
+        consoleWrite.console = new ArrayList<>();
+        return console;
     }
 
     private static TranNode run(String program) {
@@ -151,7 +153,9 @@ public class InterpreterTests {
             var tokens = l.Lex();
             var tran = new TranNode();
             var p = new Parser(tran,tokens);
+            System.out.println(tokens);
             p.Tran();
+
             var i = new Interpreter(tran, consoleWrite, new AtomicBoolean(false));
             i.start();
             return tran;

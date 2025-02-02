@@ -61,10 +61,11 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
     setRunning(true);
     const clientId = Date.now(); // Get a unique ID for each code execution
     setCurrentId(clientId);
-    const code = context === "current" ? files[fileName].content : [files[fileName].content, ...Object.entries(files)
-      .filter(([key]) => key !== fileName)
-      .map(([, file]) => file.content)]
-      .join('\n');
+    const code = context === "current" ? "##" + fileName + "##" + files[fileName].content 
+      : "##" + fileName + "##" + [files[fileName].content, ...Object.entries(files)
+          .filter(([key]) => key !== fileName)
+          .map(([key, file]) => "##" + key + "##" + file.content)]
+          .join('\n');
     
     // Close existing SSE connections
     if (eventSourceRef.current) {
@@ -72,7 +73,7 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
     }
     
     // Set up the SSE connection for the console
-    eventSourceRef.current = new EventSource(`http://localhost:8080/api/interpreter/console/${clientId}`);
+    eventSourceRef.current = new EventSource(`https://api.traninterpreter.com/api/interpreter/console/${clientId}`);
     
     // Handle SSE events
     eventSourceRef.current.addEventListener('CONSOLE_OUTPUT', (event) => {
@@ -88,6 +89,7 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
         const newOutput = [...prev, "** Time limit exceeded **"];
         return newOutput.slice(-100); // Limit to last 100 lines
       });
+      setRunning(false);
       eventSourceRef.current?.close();
     };
     
@@ -101,7 +103,7 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
    
       // Execute the code
       try {
-        const response = await fetch(`http://localhost:8080/api/interpreter/execute/${clientId}`, {
+        const response = await fetch(`https://api.traninterpreter.com/api/interpreter/execute/${clientId}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -120,7 +122,7 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
 
    const stopRunning = async () => {
     try {
-      const response = await fetch(`http://localhost:8080/api/interpreter/execute/stop/${currentId}`, {
+      const response = await fetch(`https://api.traninterpreter.com/api/interpreter/execute/stop/${currentId}`, {
         method: 'POST',
       });
   

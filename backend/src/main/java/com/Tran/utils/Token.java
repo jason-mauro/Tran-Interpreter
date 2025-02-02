@@ -22,6 +22,8 @@ public class Token {
 
     private final int columnNumber;
 
+    private final String fileName;
+
     public int getColumnNumber() {
         return columnNumber;
     }
@@ -32,26 +34,29 @@ public class Token {
         return lineNumber;
     }
 
-    public Token(TokenTypes type, int lineNumber, int columnNumber ){
+    public Token(TokenTypes type, String fileName, int lineNumber, int columnNumber) {
         this.lineNumber = lineNumber;
         this.columnNumber = columnNumber;
         this.type = type;
         this.value = Optional.empty();
+        this.fileName = fileName;
     }
 
-    public Token(TokenTypes type, int lineNumber, int columnNumber, String value ){
-        this(type, lineNumber,columnNumber);
+    public Token(TokenTypes type, String fileName,  int lineNumber, int columnNumber, String value ){
+        this(type, fileName, lineNumber,columnNumber);
         this.value = Optional.of(value);
     }
 
     public TokenTypes getType() { return type; }
 
     public String getValue() {
-           return value.orElse("");
+        return value.orElse("");
     }
+
+    public String getFileName() { return fileName; }
 
     @Override
     public String toString() {
-       return type + " " + (value.orElse("")) + "@" + lineNumber + "," + columnNumber;
+        return type + " " + (value.orElse("")) + "@" + lineNumber + "," + columnNumber;
     }
 }

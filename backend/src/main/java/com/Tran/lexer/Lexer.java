@@ -66,14 +66,14 @@ public class Lexer {
             if (peekedCharacter == '\n') {
                 textManager.getCharacter();
                 columnNumber++;
-                retVal.add(new Token(Token.TokenTypes.NEWLINE, lineNumber, columnNumber));
+                retVal.add(new Token(Token.TokenTypes.NEWLINE, textManager.getFileName(), lineNumber, columnNumber));
                 lineNumber++;
                 columnNumber = 0;
             } else if ((peekedCharacter == '\r' && textManager.peekCharacter(1) == '\n')) {
                 textManager.getCharacter();
                 textManager.getCharacter();
                 columnNumber+= 2;
-                retVal.add(new Token(Token.TokenTypes.NEWLINE, lineNumber, columnNumber));
+                retVal.add(new Token(Token.TokenTypes.NEWLINE, textManager.getFileName(), lineNumber, columnNumber));
                 lineNumber++;
                 columnNumber = 0;
             } else if (columnNumber == 0 && (peekedCharacter == ' ' || peekedCharacter == '\t' || currentIndentLevel > 0)) { // Check the indentation level of a line
@@ -93,16 +93,16 @@ public class Lexer {
                     parseComment();
                 } else if (!textManager.isAtEnd() && textManager.peekCharacter() != '\n' && textManager.peekCharacter() != '\r') { // Check if the line is not empty and update the indent level
                     if (spaces % 4 != 0) { // Invalid # of spaces
-                        throw new SyntaxErrorException("Indentation Error", lineNumber, columnNumber);
+                        throw new SyntaxErrorException("Indentation Error", lineNumber, columnNumber, textManager.getFileName());
                     } else { // Compare new indent level to the current one and create the correct amount of indent / dedent tokens
                         int newIndentLevel = spaces / 4;
                         if (newIndentLevel > currentIndentLevel) {
                             for (int i = 0; i < newIndentLevel - currentIndentLevel; i++) {
-                                retVal.add(new Token(Token.TokenTypes.INDENT, lineNumber, columnNumber));
+                                retVal.add(new Token(Token.TokenTypes.INDENT, textManager.getFileName(), lineNumber, columnNumber));
                             }
                         } else if (newIndentLevel < currentIndentLevel) {
                             for (int i = 0; i < currentIndentLevel - newIndentLevel; i++) {
-                                retVal.add(new Token(Token.TokenTypes.DEDENT, lineNumber, columnNumber));
+                                retVal.add(new Token(Token.TokenTypes.DEDENT, textManager.getFileName(), lineNumber, columnNumber));
                             }
                         }
                         currentIndentLevel = newIndentLevel;
@@ -125,7 +125,10 @@ public class Lexer {
             } else if (peekedCharacter == '\"'){
                 retVal.add(parseQuotedString());
             } else if (peekedCharacter != ' ' && peekedCharacter != '\t' && peekedCharacter != '\r'){ // Not whitespace
-                retVal.add(parsePunctuation());
+                var punctuation = parsePunctuation();
+                if (punctuation != null) {
+                    retVal.add(punctuation);
+                }
             } else { // Skip any Whitespace
                 textManager.getCharacter();
                 columnNumber++;
@@ -133,7 +136,7 @@ public class Lexer {
         }
         // Add dedent tokens at end of file if the current indent level is not 0
         for (int i = 0; i < currentIndentLevel; i++) {
-            retVal.add(new Token(Token.TokenTypes.DEDENT, lineNumber, columnNumber));
+            retVal.add(new Token(Token.TokenTypes.DEDENT, textManager.getFileName(), lineNumber, columnNumber));
         }
         return retVal;
     }
@@ -145,13 +148,13 @@ public class Lexer {
             char peekedCharacter = textManager.peekCharacter();
             // Allowed characters are Letters, Digits, and '_'
             if (!Character.isLetter(peekedCharacter) && !Character.isDigit(peekedCharacter) && peekedCharacter != '_') {
-                return knownKeywords.containsKey(wordBuffer.toString()) ? new Token(knownKeywords.get(wordBuffer.toString()), lineNumber, columnNumber) : knownSymbols.containsKey(wordBuffer.toString()) ? new Token(knownSymbols.get(wordBuffer.toString()), lineNumber, columnNumber) : new Token(Token.TokenTypes.WORD, lineNumber, columnNumber, wordBuffer.toString());
+                return knownKeywords.containsKey(wordBuffer.toString()) ? new Token(knownKeywords.get(wordBuffer.toString()), textManager.getFileName(), lineNumber, columnNumber) : knownSymbols.containsKey(wordBuffer.toString()) ? new Token(knownSymbols.get(wordBuffer.toString()), textManager.getFileName(), lineNumber, columnNumber) : new Token(Token.TokenTypes.WORD, textManager.getFileName(), lineNumber, columnNumber, wordBuffer.toString());
             } else {
                 wordBuffer.append(textManager.getCharacter());
                 columnNumber++;
             }
         }
-        return knownKeywords.containsKey(wordBuffer.toString()) ? new Token(knownKeywords.get(wordBuffer.toString()), lineNumber, columnNumber) : new Token(Token.TokenTypes.WORD, lineNumber, columnNumber, wordBuffer.toString());
+        return knownKeywords.containsKey(wordBuffer.toString()) ? new Token(knownKeywords.get(wordBuffer.toString()), textManager.getFileName(), lineNumber, columnNumber) : new Token(Token.TokenTypes.WORD, textManager.getFileName(), lineNumber, columnNumber, wordBuffer.toString());
     }
 
     private Token parseNumber() throws SyntaxErrorException {
@@ -161,15 +164,15 @@ public class Lexer {
             char peekedCharacter = textManager.peekCharacter();
             if (!Character.isDigit(peekedCharacter) && peekedCharacter != '.') {
                 if (Character.isLetter(peekedCharacter)){
-                    throw new SyntaxErrorException("Invalid Number Format", lineNumber, columnNumber);
+                    throw new SyntaxErrorException("Invalid Number Format", lineNumber, columnNumber, textManager.getFileName());
                 } else {
-                    return new Token(Token.TokenTypes.NUMBER, lineNumber, columnNumber, numberBuffer.toString());
+                    return new Token(Token.TokenTypes.NUMBER, textManager.getFileName(), lineNumber, columnNumber, numberBuffer.toString());
                 }
             } else {
                 // Check for a repeated decimal points
                 if (peekedCharacter == '.'){
                     if (isDecimalPresent){
-                        throw new SyntaxErrorException("Invalid Number Format", lineNumber, columnNumber);
+                        throw new SyntaxErrorException("Invalid Number Format", lineNumber, columnNumber, textManager.getFileName());
                     } else {
                         isDecimalPresent = true;
                     }
@@ -178,20 +181,36 @@ public class Lexer {
                 columnNumber++;
             }
         }
-        return new Token(Token.TokenTypes.NUMBER,lineNumber, columnNumber, numberBuffer.toString());
+        return new Token(Token.TokenTypes.NUMBER, textManager.getFileName(), lineNumber, columnNumber, numberBuffer.toString());
     }
 
     private Token parsePunctuation() throws SyntaxErrorException {
         String punctuation = Character.toString(textManager.getCharacter());
+
         columnNumber++;
         // Check for punctuation that is 2 characters long
         if (!textManager.isAtEnd() && knownSymbols.containsKey(punctuation + textManager.peekCharacter())){
             columnNumber++;
-            return new Token(knownSymbols.get(punctuation + textManager.getCharacter()), lineNumber, columnNumber);
+            return new Token(knownSymbols.get(punctuation + textManager.getCharacter()), textManager.getFileName(), lineNumber, columnNumber);
         } else if (knownSymbols.containsKey(punctuation)) {
-            return new Token(knownSymbols.get(punctuation), lineNumber, columnNumber);
+            return new Token(knownSymbols.get(punctuation), textManager.getFileName(), lineNumber, columnNumber);
         } else { // Invalid Symbol
-            throw new SyntaxErrorException("Invalid Punctuation", lineNumber, columnNumber);
+            if ((punctuation + "#").equals("##")){
+                columnNumber = 0;
+                lineNumber = 1;
+                textManager.getCharacter();
+                StringBuilder fileNameBuffer = new StringBuilder(Character.toString(textManager.getCharacter()));
+                while(textManager.peekCharacter() != '#'){
+                    fileNameBuffer.append(textManager.getCharacter());
+                }
+                textManager.setFileName(fileNameBuffer.toString());
+                textManager.getCharacter();
+                textManager.getCharacter();
+
+                return null;
+            } else {
+                throw new SyntaxErrorException("Invalid Punctuation", lineNumber, columnNumber, textManager.getFileName());
+            }
         }
     }
 
@@ -211,13 +230,13 @@ public class Lexer {
             }
         }
         if (textManager.isAtEnd()){
-            throw new SyntaxErrorException("Unclosed String", lineNumber, columnNumber);
+            throw new SyntaxErrorException("Unclosed String", lineNumber, columnNumber, textManager.getFileName());
         }
         // Skip the closing quote
         textManager.getCharacter();
         columnNumber++;
 
-        return new Token(Token.TokenTypes.QUOTEDSTRING, lineNumber, columnNumber, wordBuffer.toString());
+        return new Token(Token.TokenTypes.QUOTEDSTRING, textManager.getFileName(), lineNumber, columnNumber, wordBuffer.toString());
     }
 
     private Token parseQuotedCharacter() throws SyntaxErrorException {
@@ -225,9 +244,9 @@ public class Lexer {
         char character = textManager.getCharacter();
         columnNumber += 2;
         if (textManager.getCharacter() != '\'') {
-            throw new SyntaxErrorException("Unclosed Character Literal", lineNumber, columnNumber);
+            throw new SyntaxErrorException("Unclosed Character Literal", lineNumber, columnNumber, textManager.getFileName());
         }
-        return new Token(Token.TokenTypes.QUOTEDCHARACTER, lineNumber, columnNumber, Character.toString(character));
+        return new Token(Token.TokenTypes.QUOTEDCHARACTER, textManager.getFileName(), lineNumber, columnNumber, Character.toString(character));
     }
 
     private void parseComment() throws SyntaxErrorException {
@@ -255,10 +274,10 @@ public class Lexer {
         }
         // Check for code after a comment
         if (!textManager.isAtEnd() && textManager.peekCharacter() != '\n' && textManager.peekCharacter() != '\r'){
-            throw new SyntaxErrorException("Invalid Code after comment", lineNumber, columnNumber);
+            throw new SyntaxErrorException("Invalid Code after comment", lineNumber, columnNumber, textManager.getFileName());
         }
         if (depth > 0){
-            throw new SyntaxErrorException("Unclosed Comment", lineNumber, columnNumber);
+            throw new SyntaxErrorException("Unclosed Comment", lineNumber, columnNumber, textManager.getFileName());
         }
     }
 }

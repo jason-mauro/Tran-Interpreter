@@ -35,6 +35,9 @@ public class TokenManager {
         return tokens.size() >= 2 && first.equals(tokens.getFirst().getType()) && second.equals(tokens.get(1).getType());
     }
 
+    public String getCurrentFileName() {
+        return tokens.getFirst().getFileName();
+    }
     public int getCurrentLine(){
         return tokens.getFirst().getLineNumber();
     }

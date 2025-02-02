@@ -74,14 +74,7 @@
   }
 }
 
-@font-face {
-  font-family: 'Monaspace';
-  src:
-    url('./fonts/webfonts/MonaspaceNeon-Regular.woff') format('woff'),
-    url('./fonts/webfonts/MonaspaceNeon-Regular.woff2') format('woff2-variations');
-  font-weight: 300;
-  
-}
+
 
 html {
   font-family: 'Monaspace';

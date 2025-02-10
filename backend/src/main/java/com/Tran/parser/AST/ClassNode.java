@@ -16,7 +16,7 @@ public class ClassNode implements Node {
     public HashMap<String, MethodDeclarationNode> accessors = new HashMap<>(); // Name to accessors statements
     public HashMap<String, MethodDeclarationNode> mutators = new HashMap<>(); // Name to accessors statements
 
-    public HashMap<String, InterpreterDataType> memberMap = new HashMap<>();
+    public HashMap<String, InterpreterDataType> sharedMemberMap = new HashMap<>();
     public HashMap<String, List<MethodDeclarationNode>> methodMap = new HashMap<>();
 
     @Override

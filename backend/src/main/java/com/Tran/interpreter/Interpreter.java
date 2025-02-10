@@ -5,6 +5,7 @@ import com.Tran.interpreter.BuiltIns.*;
 import com.Tran.interpreter.DataTypes.*;
 import com.Tran.utils.InterruptedException;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -12,7 +13,6 @@ public class Interpreter {
     private AtomicBoolean stopRunning;
     private TranNode top;
     private HashMap<String, MethodDeclarationNode> BuiltInMethods = new HashMap<>();
-    private HashMap<String, HashMap<String, InterpreterDataType>> staticMemberMap = new HashMap<>(); // Class -> members -> data
 
 
     /** Constructor - get the interpreter ready to run. Set members from parameters and "prepare" the class.
@@ -210,16 +210,16 @@ public class Interpreter {
             }
         }
         for (var c : top.Classes){
+            List<String> members = new ArrayList<>();
             for (var m : c.members){
-                if (c.memberMap.containsKey(m.declaration.name) || staticMemberMap.containsKey(c.name) && staticMemberMap.get(c.name).containsKey(m.declaration.name)){
+                if (members.contains(m.declaration.name)){
                     throw new Exception(String.format("Variable '%s' is already defined in scope", m.declaration.name));
                 } else {
+                    members.add(m.declaration.name);
                     if (m.isShared){
-                        staticMemberMap.put(c.name, new HashMap<>(){{put(m.declaration.name, instantiate(m.declaration.type));}});
-                        staticMemberMap.get(c.name).get(m.declaration.name).Initialize();
+                        c.sharedMemberMap.put(m.declaration.name, instantiate(m.declaration.type));
+                        c.sharedMemberMap.get(m.declaration.name).Initialize();
                     }
-                    c.memberMap.put(m.declaration.name, instantiate(m.declaration.type));
-                    c.memberMap.get(m.declaration.name).Initialize();
                 }
                 if (m.accessor.isPresent()){
                     var methodNode = new MethodDeclarationNode();
@@ -683,6 +683,9 @@ public class Interpreter {
             if (left instanceof CharIDT && right instanceof StringIDT){
                 return new StringIDT(((CharIDT) left).Value + ((StringIDT) right).Value);
             }
+            if (left instanceof StringIDT && right instanceof NumberIDT){
+                return new StringIDT(((StringIDT) left).Value + ((NumberIDT) right).Value);
+            }
             // Number Operations
             if (left instanceof NumberIDT && right instanceof NumberIDT){
                 switch(((MathOpNode) expression).op){
@@ -782,10 +785,10 @@ public class Interpreter {
             if (left instanceof ReferenceIDT && right instanceof ReferenceIDT){
                 switch(((CompareNode) expression).op) {
                     case eq -> {
-
+                        return new BooleanIDT(((ReferenceIDT) left).refersTo.get().equals(((ReferenceIDT) right).refersTo.get()));
                     }
                     case ne -> {
-
+                        return new BooleanIDT(!((ReferenceIDT) left).refersTo.get().equals(((ReferenceIDT) right).refersTo.get()));
                     }
                     default -> {
                         return new BooleanIDT(false);
@@ -1033,8 +1036,8 @@ public class Interpreter {
             ObjectIDT objectID = object.get();
             if (objectID.members.containsKey(name.name)){
                 return objectID.members.get(name.name);
-            } else if (staticMemberMap.containsKey(objectID.astNode.name) && staticMemberMap.get(objectID.astNode.name).containsKey(name.name)){
-                return staticMemberMap.get(objectID.astNode.name).get(name.name);
+            } else if (objectID.astNode.sharedMemberMap.containsKey(name.name)){
+                return objectID.astNode.sharedMemberMap.get(name.name);
             }
         }
 

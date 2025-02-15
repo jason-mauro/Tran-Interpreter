@@ -151,7 +151,7 @@ public class Lexer {
                 columnNumber++;
             }
         }
-        return knownKeywords.containsKey(wordBuffer.toString()) ? new Token(knownKeywords.get(wordBuffer.toString()), lineNumber, columnNumber) : new Token(Token.TokenTypes.WORD, lineNumber, columnNumber, wordBuffer.toString());
+        return knownKeywords.containsKey(wordBuffer.toString()) ? new Token(knownKeywords.get(wordBuffer.toString()), lineNumber, columnNumber) : knownSymbols.containsKey(wordBuffer.toString()) ? new Token(knownSymbols.get(wordBuffer.toString()), lineNumber, columnNumber) : new Token(Token.TokenTypes.WORD, lineNumber, columnNumber, wordBuffer.toString());
     }
 
     private Token parseNumber() throws SyntaxErrorException {

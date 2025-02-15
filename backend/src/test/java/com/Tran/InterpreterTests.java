@@ -153,9 +153,7 @@ public class InterpreterTests {
             var tokens = l.Lex();
             var tran = new TranNode();
             var p = new Parser(tran,tokens);
-            System.out.println(tokens);
             p.Tran();
-
             var i = new Interpreter(tran, consoleWrite, new AtomicBoolean(false));
             i.start();
             return tran;

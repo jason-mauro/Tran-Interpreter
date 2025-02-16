@@ -69,7 +69,7 @@ function App() {
   return (
     <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
       <Router>
-        <div className="w-full h-screen bg-background no-scrollbar overflow-y-auto">
+        <div className="w-full h-screen bg-background scrollbar-normal overflow-y-auto">
           <div className="w-full h-[50px] bg-primary flex items-baseline p-2">
             <div className="flex items-baseline gap-5">
               <Link to="/">

@@ -105,3 +105,14 @@ html {
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/* Add this at the end of your CSS file */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+

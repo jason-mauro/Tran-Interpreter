@@ -1,21 +1,34 @@
 "use client";
 
-import TabbedEditor from './components/TabbedEditor';
 import { useEffect, useState, useRef } from 'react';
-import { Toaster } from '@/components/ui/toaster'
+import { Toaster } from '@/components/ui/toaster';
 import * as monacoEditor from 'monaco-editor';
 import { File } from './types/types';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ModeToggle } from '@/components/mode-toggle';
-import { Button } from '@/components/ui/button';
+import EditorPage from './pages/Editor';
+import DocsPage from './pages/Docs';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Link
+} from "react-router-dom";
 
 function App() {
   const [editorTheme, setEditorTheme] = useState<string>("GitHub Light");
   const [keybinds, setKeybinds] = useState<string>("Default");
   const editorRef = useRef<monacoEditor.editor.IStandaloneCodeEditor | null>(null);
   const [files, setFiles] = useState<Record<string, File>>({
-    "demo.tran": {id: 0, name: "demo.tran", content: `class demo\n\tshared start()\n\t\tconsole.print(\"Hello World\")`, viewState: null},
-    "demo2.tran": {id: 1, name: "demo2.tran", 
+    "demo.tran": {
+      id: 0,
+      name: "demo.tran",
+      content: `class demo\n\tshared start()\n\t\tconsole.print(\"Hello World\")`,
+      viewState: null
+    },
+    "demo2.tran": {
+      id: 1,
+      name: "demo2.tran", 
       content: `class demo2
 	shared fib(number n) : number x
 		if n <= 1
@@ -24,16 +37,16 @@ function App() {
 			x = fib(n-1) + fib(n-2)
 
 	shared start()
-		console.print(fib(20))`, viewState: null}
-  })
+		console.print(fib(20))`,
+      viewState: null
+    }
+  });
   const [output, setOutput] = useState<string[]>([]);
   const eventSourceRef = useRef<EventSource | null>(null);
-
   const [fileName, setFileName] = useState<string>("demo.tran");
+  const outputContainerRef = useRef<HTMLDivElement>(null);
 
   const file = files[fileName];
-
-  const outputContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (outputContainerRef.current) {
@@ -41,63 +54,65 @@ function App() {
     }
   }, [output]);
 
-
   useEffect(() => {
     editorRef?.current?.focus();
   }, [fileName, file]);
 
-  const handleKeybindChange = (keybinds : string ) => {
+  const handleKeybindChange = (keybinds: string) => {
     setKeybinds(keybinds);
-  }
+  };
+
   const handleThemeChange = (newTheme: string) => {
     setEditorTheme(newTheme);
-  }
-
+  };
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-      <div className = "w-full h-screen bg-background">
-      <div className="w-full h-[50px] bg-primary flex justify-between items-center p-2">
-        <h1 className="text-primary-foreground text-2xl font-sans">Tran Interpreter</h1>
-        <ModeToggle />
-      </div>
-         <div className="flex flex-col  justify-center items-center bg-background mt-2">
-          
-          <TabbedEditor
-            handleKeybindChange={handleKeybindChange} 
-            editorRef={editorRef}
-            handleThemeChange={handleThemeChange}
-            theme={editorTheme}
-            keybinds={keybinds}
-            setFileName={setFileName}
-            setFiles={setFiles}
-            files={files}
-            fileName={fileName}
-            eventSourceRef={eventSourceRef}
-            setOutput={setOutput}
-            />
-
-        <div className="flex flex-col w-[70%] bg-accent p-4 rounded-lg border border-input shadow-sm mt-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg text-accent-foreground">Console Output</h3>
-              <Button onClick={() => setOutput([])} variant="outline">Clear</Button>
+      <Router>
+        <div className="w-full h-screen bg-background no-scrollbar overflow-y-auto">
+          <div className="w-full h-[50px] bg-primary flex items-baseline p-2">
+            <div className="flex items-baseline gap-5">
+              <Link to="/">
+                <h1 className="text-primary-foreground text-2xl font-sans leading-none">Tran Interpreter</h1>
+              </Link>
+              <Link to="/docs">
+                <h2 className="text-primary-foreground font-sans underline text-xl">Docs</h2>
+              </Link>
             </div>
-            <div 
-              ref={outputContainerRef} 
-              className="h-[200px] overflow-y-auto mt-2 border border-input rounded-lg bg-background shadow-sm "
-            >
-              {output.map((line, index) => (
-                <p key={index} className={`text-sm pl-2 ${
-                  line?.includes("SyntaxErrorException") ? "text-destructive" : line?.includes("TranRuntimeException") ? "text-destructive" : ""
-
-                }`}>{line}</p>
-              ))}
+            <div className="ml-auto">
+              <ModeToggle />
             </div>
           </div>
-		
+              <Routes>
+                <Route 
+                  path="/" 
+                  element={
+                    <EditorPage
+                      handleKeybindChange={handleKeybindChange}
+                      editorRef={editorRef}
+                      handleThemeChange={handleThemeChange}
+                      theme={editorTheme}
+                      keybinds={keybinds}
+                      setFileName={setFileName}
+                      setFiles={setFiles}
+                      files={files}
+                      fileName={fileName}
+                      eventSourceRef={eventSourceRef}
+                      setOutput={setOutput}
+                      output={output}
+                    />
+                  }
+                />
+                <Route
+                  path="/docs"
+                  element={
+                    <DocsPage></DocsPage>
+                  }
+                />
+              </Routes>
         </div>
-      </div>
-      <Toaster />
+        <Toaster />
+      </Router>
     </ThemeProvider>
   );
 }

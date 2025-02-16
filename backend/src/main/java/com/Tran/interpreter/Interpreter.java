@@ -669,7 +669,7 @@ public class Interpreter {
                 throw new TranRuntimeException("Invalid Arithmetic Expression with Booleans");
             }
             if ((left instanceof StringIDT || right instanceof StringIDT) && !((MathOpNode) expression).op.equals(MathOpNode.MathOperations.add)){
-                throw new TranRuntimeException("Only String concatenation is allowed for strings");
+                throw new TranRuntimeException("Only String concatenation is allowed!");
             }
             // String + String = String
             if (left instanceof StringIDT && right instanceof StringIDT){
@@ -686,6 +686,16 @@ public class Interpreter {
             if (left instanceof StringIDT && right instanceof NumberIDT){
                 return new StringIDT(((StringIDT) left).Value + ((NumberIDT) right).Value);
             }
+            if (left instanceof NumberIDT && right instanceof StringIDT){
+                return new StringIDT(((NumberIDT) left).Value + ((StringIDT) right).Value);
+            }
+            if (left instanceof BooleanIDT && right instanceof StringIDT){
+                return new StringIDT(((BooleanIDT) left).Value + ((StringIDT) right).Value);
+            }
+            if (left instanceof StringIDT && right instanceof BooleanIDT){
+                return new StringIDT(((StringIDT) left).Value + ((BooleanIDT) right).Value);
+            }
+
             // Number Operations
             if (left instanceof NumberIDT && right instanceof NumberIDT){
                 switch(((MathOpNode) expression).op){

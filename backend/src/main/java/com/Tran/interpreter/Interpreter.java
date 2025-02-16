@@ -665,7 +665,7 @@ public class Interpreter {
         } else if (expression instanceof MathOpNode){
             InterpreterDataType left = evaluate(locals, object, ((MathOpNode) expression).left);
             InterpreterDataType right = evaluate(locals, object, ((MathOpNode) expression).right);
-            if (left instanceof BooleanIDT || right instanceof BooleanIDT){
+            if (left instanceof BooleanIDT && !(right instanceof StringIDT) || !(left instanceof StringIDT) && right instanceof BooleanIDT){
                 throw new TranRuntimeException("Invalid Arithmetic Expression with Booleans");
             }
             if ((left instanceof StringIDT || right instanceof StringIDT) && !((MathOpNode) expression).op.equals(MathOpNode.MathOperations.add)){

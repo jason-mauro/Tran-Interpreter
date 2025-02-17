@@ -34,7 +34,7 @@ const DocsPage = () => {
                 Classes
             </h3>
             <p className="leading-7 [&:not(:first-child)]:mt-6">
-                Classes in Tran are defined using the <strong>class</strong> keyword followed by the class name. The class body can contain fields, methods, constructors, and other member declarations. You can only have one class per file.
+                Classes in Tran are defined using the <strong>class</strong> keyword followed by the class name. The class body can contain fields, methods, constructors, and other member declarations. You can only have multiple classes per file, but no inner classes.
             </p>
             <h3 className="mt-10 scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0">
                 Blocks
@@ -45,19 +45,19 @@ const DocsPage = () => {
             <p className="leading-7 [&:not(:first-child)]:mt-6">
                 <strong>Example:</strong>
             </p>
-            <pre className="bg-gray-100 p-4 rounded-md">
-                <code>
-                    class Example2<br />
-                    number x<br />
-                    string y<br />
-                    construct() {'{called when someone uses “new” }'}<br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;x = 0<br />
+            <pre className="bg-secondary p-4 rounded-md">
+                <code className="text-secondary-foreground">
+                    class Example1<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;number x<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;string y<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;construct() {'{called when someone uses “new” }'}<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x = 0<br />
                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;y = ""<br />
-                    doSomeWork()<br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x=10<br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;loop x.times()<br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;console.print(“In The Block”)<br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;console.print(“Out of the block”)
+                    &nbsp;&nbsp;&nbsp;&nbsp;doSomeWork()<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x=10<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;loop x.times()<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;console.print(“In The Block”)<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;console.print(“Out of the block”)
                 </code>
             </pre>
 
@@ -70,8 +70,8 @@ const DocsPage = () => {
             <p className="leading-7 [&:not(:first-child)]:mt-6">
                 <strong>Example:</strong>
             </p>
-            <pre className="bg-gray-100 p-4 rounded-md">
-                <code>
+            <pre className="bg-secondary p-4 rounded-md">
+                <code className="text-secondary-foreground">
                     Student instanceOfStudent<br />
                     instanceOfStudent = new Student ()
                 </code>
@@ -86,17 +86,17 @@ const DocsPage = () => {
             <p className="leading-7 [&:not(:first-child)]:mt-6">
                 <strong>Example:</strong>
             </p>
-            <pre className="bg-gray-100 p-4 rounded-md">
-                <code>
-                    class Example3<br />
-                    number x<br />
-                    string y<br />
-                    construct() {'{called when someone uses “new” }'}<br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;x = 0<br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;y = ""<br />
-                    construct(number n) {'{An example of an overloaded constructor}'}<br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;x = n<br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;y = ""
+            <pre className="bg-secondary p-4 rounded-md">
+                <code className="text-secondary-foreground">
+                    class Example2<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;number x<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;string y<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;construct() {'{called when someone uses “new” }'}<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x = 0<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;y = ""<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;construct(number n) {'{An example of an overloaded constructor}'}<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x = n<br />
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;y = ""
                 </code>
             </pre>
 
@@ -106,8 +106,8 @@ const DocsPage = () => {
             <p className="leading-7 [&:not(:first-child)]:mt-6">
                 Comments start with {'{and end with}'}. Comments can span multiple lines. Comments can be nested.
             </p>
-            <pre className="bg-gray-100 p-4 rounded-md">
-                <code>
+            <pre className="bg-secondary p-4 rounded-md">
+                <code className="text-secondary-foreground">
                     {'{This is a comment}'}<br />
                     {'{This is {also} a comment}'}<br />
                     {'{This'} <br />
@@ -123,8 +123,8 @@ const DocsPage = () => {
             <p className="leading-7 [&:not(:first-child)]:mt-6">
                 Variables can be assigned on the same line they are declared or after declaration. Tran allows multiple variables of the same type to be declared in the same line as well, supporting initialization at declaration.
             </p>
-            <pre className="bg-gray-100 p-4 rounded-md">
-                <code>
+            <pre className="bg-secondary p-4 rounded-md">
+                <code className="text-secondary-foreground">
                     string s<br />
                     s = "agc"<br />
                     number x<br />
@@ -145,8 +145,8 @@ const DocsPage = () => {
             <p className="leading-7 [&:not(:first-child)]:mt-6">
                 In Tran, an if statement works almost exactly like that in Java. The only difference lies in the syntax, in Java, the condition is surrounded by parentheses, whereas in Tran, it is not. Tran also has else and else if statements that work like those in Java.
             </p>
-            <pre className="bg-gray-100 p-4 rounded-md">
-                <code>
+            <pre className="bg-secondary p-4 rounded-md">
+                <code className="text-secondary-foreground">
                     number n<br />
                     n = 200<br />
                     if n {'>'} 100<br />
@@ -164,8 +164,8 @@ const DocsPage = () => {
             <p className="leading-7 [&:not(:first-child)]:mt-6">
                 In Tran, the loop construct replaces traditional for, while, and do-while loops. The condition can either be an iterator or a boolean. When using an iterator, the loop will continue until the iterator reaches its end, effectively evaluating to false. For Boolean conditions, the loop will run until the condition evaluates to false.
             </p>
-            <pre className="bg-gray-100 p-4 rounded-md">
-                <code>
+            <pre className="bg-secondary p-4 rounded-md">
+                <code className="text-secondary-foreground">
                     boolean keepGoing = boolean.true<br />
                     loop keepGoing<br />
                     &nbsp;&nbsp;&nbsp;&nbsp;if n {'>'}= 65<br />
@@ -200,10 +200,11 @@ const DocsPage = () => {
             <p className="leading-7 [&:not(:first-child)]:mt-6">
                 A method call involves executing a predefined block of code by its name and passing in any required arguments. When a method is called, it can return multiple types or no return type at all.
             </p>
-            <pre className="bg-gray-100 p-4 rounded-md">
-                <code>
+            <pre className="bg-secondary p-4 rounded-md">
+                <code className="text-secondary-foreground">
                     shared main()<br />
-                    &nbsp;&nbsp;&nbsp;&nbsp;printNumbers()
+                    &nbsp;&nbsp;&nbsp;&nbsp;printNumbers()<br/>
+                    &nbsp;&nbsp;&nbsp;&nbsp;x,y,z = getNumbers()
                 </code>
             </pre>
 
@@ -216,8 +217,8 @@ const DocsPage = () => {
             <ul className="my-6 ml-6 list-disc [&>li]:mt-2">
                 <li><strong>times():</strong> Available on number objects. It returns an iterator that generates a sequence from 1 to the specified number.</li>
             </ul>
-            <pre className="bg-gray-100 p-4 rounded-md">
-                <code>
+            <pre className="bg-secondary p-4 rounded-md">
+                <code className="text-secondary-foreground">
                     number n<br />
                     n=10<br />
                     loop n.times()<br />
@@ -235,8 +236,8 @@ const DocsPage = () => {
                 <p className="leading-7 [&:not(:first-child)]:mt-6">
                     The Boolean class defines the fundamental logical operations in Tran. It includes predefined constants for <code>true</code> and <code>false</code> and methods for logical operations such as <code>not</code>, <code>and</code>, and <code>or</code>.
                 </p>
-                <pre className="bg-gray-100 p-4 rounded-md">
-                    <code>
+                <pre className="bg-secondary p-4 rounded-md">
+                    <code className="text-secondary-foreground">
                         class boolean<br />
                         &nbsp;&nbsp;&nbsp;&nbsp;shared boolean true<br />
                         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;accessor: {'{ makes this publicly readable }'}<br />
@@ -278,8 +279,8 @@ const DocsPage = () => {
                 <p className="leading-7 [&:not(:first-child)]:mt-6">
                     In Tran, an interface defines a set of methods and members that a class must implement. Interfaces do not impose any inheritance rules, and a class can implement as many interfaces as needed. Interfaces provide a blueprint for classes without defining how methods should be implemented.
                 </p>
-                <pre className="bg-gray-100 p-4 rounded-md">
-                    <code>
+                <pre className="bg-secondary p-4 rounded-md">
+                    <code className="text-secondary-foreground">
                         interface someName<br />
                         &nbsp;&nbsp;&nbsp;&nbsp;square() : number s<br />
 
@@ -311,8 +312,8 @@ const DocsPage = () => {
                     <li><strong>String Operators:</strong> <code>+</code> is used for concatenation. This operator is left-associative.</li>
                     <li><strong>Comparison Operators:</strong> The comparison operators in Tran are: <code>==</code> (equals), <code>!=</code> (not equal), <code>{'<'}</code> (less than), <code>{'<'}=</code> (less than or equal to), <code>{'>'}</code> (greater than), <code>{'>'}=</code> (greater than or equal to). Comparisons can only be made between values of the same type, and these operators are also left-associative.</li>
                 </ul>
-                <pre className="bg-gray-100 p-4 rounded-md">
-                    <code>
+                <pre className="bg-secondary p-4 rounded-md">
+                    <code className="text-secondary-foreground">
                         number a = 5<br />
                         number b = 10<br />
                         if a == b<br />
@@ -330,8 +331,8 @@ const DocsPage = () => {
                 <p className="leading-7 [&:not(:first-child)]:mt-6">
                     Here's an example program that demonstrates some of the concepts in Tran, including variables, operators, and method calls.
                 </p>
-                <pre className="bg-gray-100 p-4 rounded-md">
-                    <code>
+                <pre className="bg-secondary p-4 rounded-md">
+                    <code className="text-secondary-foreground">
                         shared main()<br />
                         &nbsp;&nbsp;&nbsp;&nbsp;number a = 5<br />
                         &nbsp;&nbsp;&nbsp;&nbsp;number b = 10<br />

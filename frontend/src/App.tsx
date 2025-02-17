@@ -67,10 +67,10 @@ function App() {
   };
 
   return (
-    <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <Router>
         <div className="w-full h-screen bg-background scrollbar-normal overflow-y-auto">
-          <div className="w-full h-[50px] bg-primary flex items-baseline p-2">
+          <div className="w-full h-[50px] bg-primary flex items-center p-2">
             <div className="flex items-baseline gap-5">
               <Link to="/">
                 <h1 className="text-primary-foreground text-2xl font-sans leading-none">Tran Interpreter</h1>

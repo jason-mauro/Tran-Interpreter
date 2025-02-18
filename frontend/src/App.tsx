@@ -8,6 +8,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { ModeToggle } from '@/components/mode-toggle';
 import EditorPage from './pages/Editor';
 import DocsPage from './pages/Docs';
+import NotFound from './pages/NotFound';
 import {
   BrowserRouter as Router,
   Routes,
@@ -109,6 +110,12 @@ function App() {
                     <DocsPage></DocsPage>
                   }
                 />
+                <Route
+                  path="*"
+                  element={
+                    <NotFound></NotFound>
+                  }
+                / >
               </Routes>
         </div>
         <Toaster />

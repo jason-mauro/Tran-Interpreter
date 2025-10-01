@@ -63,11 +63,11 @@ Run the Spring Boot application:
 mvn spring-boot:run
 ```
 
-The backend server will start on **http://localhost:8080** (or the port specified in `application.properties`).
+The backend server will start on **http://localhost:8081** (or the port specified in `application.properties`).
 
 **Alternative:** Run using the generated JAR file:
 ```bash
-java -jar target/<application-name>.jar
+java -jar target/TranInterpreter.jar
 ```
 
 ### 3. Frontend Setup (React + Vite)

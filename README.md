@@ -1,6 +1,6 @@
-# React + Spring Boot Application Setup
+# Tran Interpreter Run Instructions
 
-This guide will help you set up and run the application after cloning the repository. The project consists of a Spring Boot backend and a React (Vite) frontend.
+This guide will help you set up and run the application after cloning the repository. The project consists of a Spring Boot backend which runs the interpreter and a React (Vite) frontend which serves as a code editor.
 
 ## Prerequisites
 
@@ -175,3 +175,6 @@ If you encounter CORS errors, ensure your Spring Boot application has CORS confi
 ```
 
 After running the frontend and backend you should be able to write and execute code in the code editor provided and click run to see your output.
+
+The backend takes requests to run code, spinning up a new thread for each request and sends output using SSE (Server sent events) which gives real time code execution and output.
+

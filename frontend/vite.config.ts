@@ -13,7 +13,7 @@ export default defineConfig({
   },
    preview: {
     host: "0.0.0.0",
-    port: 4173, 
+    port: 5173, 
   },
   build: {
     rollupOptions: {

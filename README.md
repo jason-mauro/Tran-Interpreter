@@ -65,10 +65,6 @@ mvn spring-boot:run
 
 The backend server will start on **http://localhost:8081** (or the port specified in `application.properties`).
 
-**Alternative:** Run using the generated JAR file:
-```bash
-java -jar target/TranInterpreter.jar
-```
 
 ### 3. Frontend Setup (React + Vite)
 
@@ -129,13 +125,6 @@ Build the frontend for production:
 cd frontend
 npm run build
 ```
-Run the frontend locally
-```bash
-npm run preview
-```
-
-Which you should then be able to access it on `http://localhost:4173/`
-
 The production files will be in the `dist/` directory.
 
 ## Common Issues and Solutions
@@ -149,11 +138,15 @@ If port 8081 or 5173 is already in use:
   server.port=8081
   ```
 
-- **Frontend:** The Vite dev server will automatically try the next available port, or you can specify one in `vite.config.js` by adding this:
+- **Frontend:** The Vite dev server will automatically try the next available port, or you can specify one in `vite.config.js`:
   ```javascript
-  preview: {
+  server: {
     host: "0.0.0.0",
-    port: 5173, // Change to desired port number
+    port: 5173, //
+    cors: true,
+    hmr: {
+      host: "localhost",
+    },
   },
   ```
 

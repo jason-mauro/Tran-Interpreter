@@ -56,6 +56,8 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
 	const [context, setContext] = React.useState<string>("current");
   const [running, setRunning] = React.useState<boolean>(false);
 
+ const BASE_URL = (import.meta.env.VITE_DOMAIN_URL ?? "http://localhost:8081");
+
 	// TODO: Add delimiters to files to track errors for each file $name$ and create new token for them in the lexer for better errors
 	const executeCode = async () => {
     setRunning(true);
@@ -73,7 +75,7 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
     }
     
     // Set up the SSE connection for the console
-    eventSourceRef.current = new EventSource(`https://api.traninterpreter.com/api/interpreter/console/${clientId}`);
+    eventSourceRef.current = new EventSource(`${BASE_URL}/api/interpreter/console/${clientId}`);
     
     // Handle SSE events
     eventSourceRef.current.addEventListener('CONSOLE_OUTPUT', (event) => {
@@ -103,7 +105,7 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
    
       // Execute the code
       try {
-        const response = await fetch(`https://api.traninterpreter.com/api/interpreter/execute/${clientId}`, {
+        const response = await fetch(`${BASE_URL}/api/interpreter/execute/${clientId}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -122,7 +124,7 @@ const TabbedEditor: React.FC<TabbedEditorProps> = ({
 
    const stopRunning = async () => {
     try {
-      const response = await fetch(`https://api.traninterpreter.com/api/interpreter/execute/stop/${currentId}`, {
+      const response = await fetch(`${BASE_URL}/api/interpreter/execute/stop/${currentId}`, {
         method: 'POST',
       });
   
